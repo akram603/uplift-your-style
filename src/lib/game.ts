@@ -17,7 +17,7 @@ export interface Team {
   /** AI bidding personality (higher = more willing to overpay). */
   aggression: number
   /** Formation chosen for this run (display only). */
-  formationId?: string
+  formationId?: string | undefined
 }
 
 /** Maximum total amount any club may borrow across the draft. */
@@ -214,7 +214,7 @@ export interface GameConfig {
   startingBudget: number
   numOpponents: number
   difficulty: Difficulty
-  formationId?: string
+  formationId?: string | undefined
 }
 
 export type LogKind = 'info' | 'bid' | 'win' | 'hidden'

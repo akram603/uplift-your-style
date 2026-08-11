@@ -65,7 +65,7 @@ export function SquadDashboard({
   budget: number;
   squad: Player[];
   teamSize: TeamSize;
-  formationId?: string;
+  formationId?: string | undefined;
   startingBudget?: number;
   debt?: number;
   penalty?: boolean;

@@ -26,7 +26,7 @@ export interface MpResult {
 export interface MpState {
   phase: 'bidding' | 'resolved' | 'over'
   teamSize: TeamSize
-  formationId?: string
+  formationId?: string | undefined
   totalRounds: number
   round: number
   teams: Record<PeerId, MpTeam>
@@ -44,7 +44,7 @@ export interface MpState {
 
 export interface MpConfig {
   teamSize: TeamSize
-  formationId?: string
+  formationId?: string | undefined
   startingBudget: number
   filter: PoolFilterConfig
   hostName: string
