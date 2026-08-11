@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Trophy, Gamepad2, Wifi, Volume2, VolumeX, History } from "lucide-react";
+import { Trophy, Gamepad2, Wifi, Volume2, VolumeX, History, Users } from "lucide-react";
 import { loadHistory, type RunRecord } from "@/lib/save";
 import { sfx } from "@/lib/sfx";
 
@@ -87,6 +87,17 @@ function Menu() {
           <p className="mt-1 text-sm text-muted-foreground">
             Draft head-to-head with a friend anywhere in the world. Host a room, share the invite
             link, bid in real time — no AI.
+          </p>
+        </Link>
+
+        <Link
+          to="/local-multiplayer"
+          className="group rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/50 sm:col-span-2"
+        >
+          <Users className="h-7 w-7 text-primary" />
+          <h2 className="mt-4 font-display text-xl font-semibold">Local Two-Player</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Pass-and-play on one device. Take turns bidding head-to-head — no internet, no AI.
           </p>
         </Link>
       </div>
