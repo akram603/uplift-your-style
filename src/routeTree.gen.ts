@@ -10,33 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OnlineMultiplayerRouteImport } from './routes/online-multiplayer'
+import { Route as SinglePlayerRouteImport } from './routes/single-player'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OnlineMultiplayerRoute = OnlineMultiplayerRouteImport.update({
+  id: '/online-multiplayer',
+  path: '/online-multiplayer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SinglePlayerRoute = SinglePlayerRouteImport.update({
+  id: '/single-player',
+  path: '/single-player',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/online-multiplayer': typeof OnlineMultiplayerRoute
+  '/single-player': typeof SinglePlayerRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/online-multiplayer': typeof OnlineMultiplayerRoute
+  '/single-player': typeof SinglePlayerRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/online-multiplayer': typeof OnlineMultiplayerRoute
+  '/single-player': typeof SinglePlayerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/online-multiplayer' | '/single-player'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/online-multiplayer' | '/single-player'
+  id: '__root__' | '/' | '/online-multiplayer' | '/single-player'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  OnlineMultiplayerRoute: typeof OnlineMultiplayerRoute
+  SinglePlayerRoute: typeof SinglePlayerRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,22 +68,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/online-multiplayer': {
+      id: '/online-multiplayer'
+      path: '/online-multiplayer'
+      fullPath: '/online-multiplayer'
+      preLoaderRoute: typeof OnlineMultiplayerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/single-player': {
+      id: '/single-player'
+      path: '/single-player'
+      fullPath: '/single-player'
+      preLoaderRoute: typeof SinglePlayerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  OnlineMultiplayerRoute: OnlineMultiplayerRoute,
+  SinglePlayerRoute: SinglePlayerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
