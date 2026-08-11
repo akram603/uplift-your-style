@@ -53,6 +53,21 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/single-player")({
+  head: () => ({
+    meta: [
+      { title: "Single Player Draft — Football Auction Draft" },
+      {
+        name: "description",
+        content:
+          "Draft your XI against AI managers: bid on revealed stars, gamble on hidden players and win the league season.",
+      },
+      { property: "og:title", content: "Single Player Draft — Football Auction Draft" },
+      {
+        property: "og:description",
+        content: "Outbid AI managers, build a squad within budget and chase the title.",
+      },
+    ],
+  }),
   component: SinglePlayer,
 });
 
