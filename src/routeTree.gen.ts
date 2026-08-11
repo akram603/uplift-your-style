@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LocalMultiplayerRouteImport } from './routes/local-multiplayer'
 import { Route as OnlineMultiplayerRouteImport } from './routes/online-multiplayer'
 import { Route as SinglePlayerRouteImport } from './routes/single-player'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocalMultiplayerRoute = LocalMultiplayerRouteImport.update({
+  id: '/local-multiplayer',
+  path: '/local-multiplayer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnlineMultiplayerRoute = OnlineMultiplayerRouteImport.update({
@@ -31,30 +37,40 @@ const SinglePlayerRoute = SinglePlayerRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/local-multiplayer': typeof LocalMultiplayerRoute
   '/online-multiplayer': typeof OnlineMultiplayerRoute
   '/single-player': typeof SinglePlayerRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/local-multiplayer': typeof LocalMultiplayerRoute
   '/online-multiplayer': typeof OnlineMultiplayerRoute
   '/single-player': typeof SinglePlayerRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/local-multiplayer': typeof LocalMultiplayerRoute
   '/online-multiplayer': typeof OnlineMultiplayerRoute
   '/single-player': typeof SinglePlayerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/online-multiplayer' | '/single-player'
+  fullPaths:
+    '/' | '/local-multiplayer' | '/online-multiplayer' | '/single-player'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/online-multiplayer' | '/single-player'
-  id: '__root__' | '/' | '/online-multiplayer' | '/single-player'
+  to: '/' | '/local-multiplayer' | '/online-multiplayer' | '/single-player'
+  id:
+    | '__root__'
+    | '/'
+    | '/local-multiplayer'
+    | '/online-multiplayer'
+    | '/single-player'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LocalMultiplayerRoute: typeof LocalMultiplayerRoute
   OnlineMultiplayerRoute: typeof OnlineMultiplayerRoute
   SinglePlayerRoute: typeof SinglePlayerRoute
 }
@@ -66,6 +82,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/local-multiplayer': {
+      id: '/local-multiplayer'
+      path: '/local-multiplayer'
+      fullPath: '/local-multiplayer'
+      preLoaderRoute: typeof LocalMultiplayerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/online-multiplayer': {
@@ -87,9 +110,20 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LocalMultiplayerRoute: LocalMultiplayerRoute,
   OnlineMultiplayerRoute: OnlineMultiplayerRoute,
   SinglePlayerRoute: SinglePlayerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
