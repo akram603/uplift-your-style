@@ -5,15 +5,32 @@ import { loadHistory, type RunRecord } from "@/lib/save";
 import { sfx } from "@/lib/sfx";
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Football Auction Draft — Bid, Bluff, Build Your XI" },
+      {
+        name: "description",
+        content:
+          "Auction football stars against AI or a friend online, gamble on hidden players, and build a squad within budget.",
+      },
+      { property: "og:title", content: "Football Auction Draft — Bid, Bluff, Build Your XI" },
+      {
+        property: "og:description",
+        content:
+          "Whoever loses the bidding war gets the hidden player. Build your XI and win the league.",
+      },
+    ],
+  }),
   component: Menu,
 });
 
 function Menu() {
   const [history, setHistory] = useState<RunRecord[]>([]);
-  const [muted, setMuted] = useState(sfx.isMuted());
+  const [muted, setMuted] = useState(false);
 
   useEffect(() => {
     setHistory(loadHistory());
+    setMuted(sfx.isMuted());
   }, []);
 
   const toggleMute = () => {
