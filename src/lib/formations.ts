@@ -113,3 +113,43 @@ export function slotsForSize(size: TeamSize, formationId?: string): FormationSlo
   const match = available.find((f) => f.id === formationId)
   return (match ?? available[0]!).slots
 }
+
+const ORDER: Position[] = ['GK', 'DEF', 'MID', 'FWD']
+
+/**
+ * How many slots of each position a squad still has to fill for its formation.
+ * The totals always add up to the number of remaining rounds, so drafting one
+ * needed position per round guarantees a legal squad — goalkeeper included.
+ */
+export function positionNeedCounts(
+  squad: { position: Position }[],
+  size: TeamSize,
+  formationId?: string,
+): Record<Position, number> {
+  const need: Record<Position, number> = { GK: 0, DEF: 0, MID: 0, FWD: 0 }
+  for (const s of slotsForSize(size, formationId)) need[s.position] += 1
+  for (const p of squad) if (need[p.position] > 0) need[p.position] -= 1
+  return need
+}
+
+/** Picks the next position to auction, weighted by how many slots remain. */
+export function pickNeededPosition(need: Record<Position, number>): Position | null {
+  const total = ORDER.reduce((s, p) => s + Math.max(0, need[p]), 0)
+  if (total <= 0) return null
+  let roll = Math.random() * total
+  for (const p of ORDER) {
+    roll -= Math.max(0, need[p])
+    if (roll <= 0) return p
+  }
+  return ORDER.find((p) => need[p] > 0) ?? null
+}
+
+/** Players from `pool` that can legally fill the given position. */
+export function playersForPosition<T extends { position: Position }>(
+  pool: T[],
+  position: Position | null,
+): T[] {
+  if (!position) return pool
+  const matching = pool.filter((p) => p.position === position)
+  return matching.length >= 2 ? matching : pool
+}

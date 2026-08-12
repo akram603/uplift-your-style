@@ -3,6 +3,7 @@
 
 import type { Player } from './players'
 import type { TeamSize } from './formations'
+import { pickNeededPosition, playersForPosition, positionNeedCounts } from './formations'
 
 export interface Team {
   id: string
@@ -303,7 +304,7 @@ export function createTeams(config: GameConfig): Team[] {
   return teams
 }
 
-/** Minimum increment scales with the current price. */
+/** Suggested increment (used only for the quick-bump helper in the UI). */
 export function increment(price: number): number {
   if (price < 20) return 2
   if (price < 50) return 5
@@ -311,8 +312,8 @@ export function increment(price: number): number {
 }
 
 export function nextBidAmount(state: AuctionState): number {
-  if (state.highBidderId === null) return state.base
-  return state.currentBid + increment(state.currentBid)
+  if (state.highBidderId === null) return 1
+  return state.currentBid + 1
 }
 
 function teamById(teams: Team[], id: string | null): Team | undefined {
@@ -324,12 +325,22 @@ export function startRound(
   round: number,
   pool: Player[],
   teams: Team[],
+  teamSize?: TeamSize,
+  formationId?: string,
 ): AuctionState {
-  // Prefer a strong revealed player and a random hidden one for suspense.
-  const shuffled = [...pool].sort(() => Math.random() - 0.5)
+  // Only auction positions the human squad still legally needs, so every
+  // formation (goalkeeper included) always gets filled.
+  const human = teams.find((t) => t.isHuman)
+  const needPos =
+    human && teamSize
+      ? pickNeededPosition(positionNeedCounts(human.squad, teamSize, formationId))
+      : null
+  const eligible = playersForPosition(pool, needPos)
+  const shuffled = [...eligible].sort(() => Math.random() - 0.5)
   const revealed = shuffled[0]!
   const hidden = shuffled[1]!
-  const base = Math.max(2, Math.round(revealed.value * 0.35))
+  // Every auction opens at 0 — managers type any amount they like.
+  const base = 0
 
   const aiMax: Record<string, number> = {}
   for (const t of teams) {
@@ -354,7 +365,11 @@ export function startRound(
     result: null,
     log: [],
   }
-  log(state, 'info', `Round ${round}: ${revealed.name} is on the block. Opening at $${base}M.`)
+  log(
+    state,
+    'info',
+    `Round ${round}: ${revealed.name} (${revealed.position}) is on the block. Bidding opens at $0M.`,
+  )
   return state
 }
 
@@ -366,6 +381,11 @@ export function humanBid(prev: AuctionState, teams: Team[]): AuctionState {
 /** The lowest legal bid the human may place right now. */
 export function minLegalBid(state: AuctionState): number {
   return nextBidAmount(state)
+}
+
+/** Cost of settling for the hidden player this round. */
+export function hiddenPriceFor(state: AuctionState): number {
+  return Math.max(2, Math.round(state.hidden.value * 0.3))
 }
 
 /**
@@ -400,12 +420,11 @@ export function humanBidAmount(
  * race on purpose to pocket the hidden player instead — handing you the star.
  */
 function aiRespond(state: AuctionState, teams: Team[]): AuctionState {
-  const next = state.currentBid + increment(state.currentBid)
   let best: Team | null = null
   for (const t of teams) {
     if (t.isHuman || t.id === state.highBidderId) continue
     const max = state.aiMax[t.id] ?? 0
-    if (max >= next && t.budget >= next) {
+    if (max > state.currentBid && t.budget > state.currentBid) {
       if (!best || (state.aiMax[t.id] ?? 0) > (state.aiMax[best.id] ?? 0)) best = t
     }
   }
@@ -414,6 +433,12 @@ function aiRespond(state: AuctionState, teams: Team[]): AuctionState {
     // No opponent will top the current bid: the leader wins the revealed player.
     return resolveRevealed(state, teams, state.highBidderId!)
   }
+
+  // Free-form counter: a custom amount above the current bid, never over budget
+  // or the AI's valuation.
+  const ceiling = Math.min(best.budget, state.aiMax[best.id] ?? 0)
+  const step = Math.max(1, Math.round((ceiling - state.currentBid) * (0.15 + Math.random() * 0.35)))
+  const next = Math.min(ceiling, state.currentBid + step)
 
   // Mind game: an aggressive AI with headroom may bail out deliberately.
   if (best.aggression >= 1.15 && Math.random() < 0.1 * Math.min(1.6, best.aggression)) {
@@ -445,8 +470,8 @@ export function humanTakeHidden(prev: AuctionState, teams: Team[]): AuctionState
     .filter((t) => !t.isHuman && (state.aiMax[t.id] ?? 0) >= state.base)
     .sort((a, b) => (state.aiMax[b.id] ?? 0) - (state.aiMax[a.id] ?? 0))
 
-  const human = teamById(teams, state.humanId)!
-  const hiddenPrice = Math.min(human.budget, Math.max(2, Math.round(state.base * 0.8)))
+  const humanTeam = teamById(teams, state.humanId)!
+  const hiddenPrice = Math.min(humanTeam.budget, hiddenPriceFor(state))
 
   if (contenders.length === 0) {
     // Nobody wanted the revealed player.

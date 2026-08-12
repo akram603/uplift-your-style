@@ -12,7 +12,8 @@ import {
   type MpState,
   type PeerId,
 } from "@/lib/mp-game";
-import { ArrowLeft, RotateCcw, Trophy, Users } from "lucide-react";
+import { ArrowLeft, PlayCircle, RotateCcw, Trophy, Users } from "lucide-react";
+import { MatchSimScreen } from "@/components/game/match-sim-screen";
 
 export const Route = createFileRoute("/local-multiplayer")({
   head: () => ({
@@ -117,12 +118,32 @@ function LocalMultiplayer() {
               <Users className="h-3.5 w-3.5" /> {state.teams[active].name}&apos;s device
             </span>
           </div>
-          <MpAuctionScreen state={state} meId={active} onAction={dispatch} />
+          <MpAuctionScreen
+            state={state}
+            meId={active}
+            controlledIds={["host", "guest"]}
+            onAction={dispatch}
+          />
         </>
       )}
 
       {state && state.phase === "over" && (
-        <LocalGameOver state={state} onRematch={rematch} onExit={() => setState(null)} />
+        <LocalGameOver
+          state={state}
+          onSimulate={() => dispatch({ type: "simulate" })}
+          onRematch={rematch}
+          onExit={() => setState(null)}
+        />
+      )}
+
+      {state && state.phase === "match" && state.match && (
+        <MatchSimScreen
+          sim={state.match}
+          names={{ host: state.teams.host.name, guest: state.teams.guest.name }}
+          points={state.points}
+          canAdvance
+          onNextRound={() => dispatch({ type: "newDraft" })}
+        />
       )}
     </main>
   );
@@ -130,10 +151,12 @@ function LocalMultiplayer() {
 
 function LocalGameOver({
   state,
+  onSimulate,
   onRematch,
   onExit,
 }: {
   state: MpState;
+  onSimulate: () => void;
   onRematch: () => void;
   onExit: () => void;
 }) {
@@ -173,10 +196,13 @@ function LocalGameOver({
         />
       </div>
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        <Button className="h-12 w-full text-base" onClick={onRematch}>
+        <Button className="h-12 w-full text-base sm:col-span-2" onClick={onSimulate}>
+          <PlayCircle className="h-4 w-4" /> Start Match Simulation
+        </Button>
+        <Button variant="secondary" className="h-12 w-full text-base" onClick={onRematch}>
           <RotateCcw className="h-4 w-4" /> Rematch
         </Button>
-        <Button variant="secondary" className="h-12 w-full text-base" onClick={onExit}>
+        <Button variant="ghost" className="h-12 w-full text-base" onClick={onExit}>
           New Settings
         </Button>
       </div>

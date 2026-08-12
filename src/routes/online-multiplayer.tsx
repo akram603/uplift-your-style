@@ -24,7 +24,9 @@ import {
   Trophy,
   Unplug,
   Wifi,
+  PlayCircle,
 } from "lucide-react";
+import { MatchSimScreen } from "@/components/game/match-sim-screen";
 
 export const Route = createFileRoute("/online-multiplayer")({
   head: () => ({
@@ -438,8 +440,19 @@ function OnlineMultiplayer() {
           state={state}
           meId={role}
           isHost={role === "host"}
+          onSimulate={() => dispatch({ type: "simulate" })}
           onRematch={rematch}
           onLeave={leave}
+        />
+      )}
+
+      {screen === "playing" && state && state.phase === "match" && state.match && (
+        <MatchSimScreen
+          sim={state.match}
+          names={{ host: state.teams.host.name, guest: state.teams.guest.name }}
+          points={state.points}
+          canAdvance={role === "host"}
+          onNextRound={() => dispatch({ type: "newDraft" })}
         />
       )}
     </main>
@@ -450,12 +463,14 @@ function MpGameOver({
   state,
   meId,
   isHost,
+  onSimulate,
   onRematch,
   onLeave,
 }: {
   state: MpState;
   meId: PeerId;
   isHost: boolean;
+  onSimulate: () => void;
   onRematch: () => void;
   onLeave: () => void;
 }) {
@@ -494,6 +509,9 @@ function MpGameOver({
         />
       </div>
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <Button className="h-12 w-full text-base sm:col-span-2" onClick={onSimulate}>
+          <PlayCircle className="h-4 w-4" /> Start Match Simulation
+        </Button>
         {isHost ? (
           <Button className="h-12 w-full text-base" onClick={onRematch}>
             <RotateCcw className="h-4 w-4" /> Rematch (host)

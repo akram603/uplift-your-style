@@ -154,12 +154,12 @@ function SinglePlayer() {
     setResume(null);
   }, []);
 
-  const beginRound = useCallback((r: number, currentPool: Player[], currentTeams: Team[]) => {
-    const state = startRound(r, currentPool, currentTeams);
+  const beginRound = useCallback((r: number, currentPool: Player[], currentTeams: Team[], size?: TeamSize, fid?: string) => {
+    const state = startRound(r, currentPool, currentTeams, size ?? teamSize, fid ?? formationId);
     setPool(currentPool.filter((p) => p.id !== state.revealed.id && p.id !== state.hidden.id));
     setAuction(state);
     setRound(r);
-  }, []);
+  }, [teamSize, formationId]);
 
   const handleStart = useCallback(
     (setup: SetupResult) => {
@@ -179,7 +179,7 @@ function SinglePlayer() {
       setSeason(null);
       setLastTurn(null);
       setPhase("draft");
-      beginRound(1, newPool, newTeams);
+      beginRound(1, newPool, newTeams, setup.teamSize, setup.formationId);
     },
     [beginRound],
   );
