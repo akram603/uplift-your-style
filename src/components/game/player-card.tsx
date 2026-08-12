@@ -106,16 +106,35 @@ export function RevealedCard({ player }: { player: Player }) {
           <p className="text-sm text-muted-foreground">
             {POSITION_LABEL[player.position]} · {player.country}
           </p>
+          {(player.club || player.age) && (
+            <p className="text-xs text-muted-foreground/80">
+              {[player.roles, player.club, player.age ? `${player.age}y` : null]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          )}
         </div>
       </div>
       <div className="space-y-1.5">
         <StatBar label="PAC" value={player.pace} />
         <StatBar label="SHO" value={player.shooting} />
         <StatBar label="PAS" value={player.passing} />
+        {player.dribbling !== undefined && <StatBar label="DRI" value={player.dribbling} />}
         <StatBar label="DEF" value={player.defending} />
+        {player.physical !== undefined && <StatBar label="PHY" value={player.physical} />}
       </div>
-      <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs">
-        <span className="text-muted-foreground">Market value</span>
+      <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3 text-xs">
+        <span className="text-muted-foreground">
+          {player.potential ? (
+            <>
+              Potential{" "}
+              <span className="font-mono font-semibold text-foreground">{player.potential}</span>
+              {player.league ? <span className="ml-2 opacity-70">{player.league}</span> : null}
+            </>
+          ) : (
+            "Market value"
+          )}
+        </span>
         <span className="font-mono font-semibold text-money">${player.value}M</span>
       </div>
     </div>
@@ -163,6 +182,7 @@ export function HiddenRevealedCard({ player }: { player: Player }) {
       <p className="text-sm text-muted-foreground">
         {POSITION_LABEL[player.position]} · {player.country} · OVR{" "}
         <span className="font-mono font-semibold text-foreground">{player.ovr}</span>
+        {player.club ? <span className="opacity-70"> · {player.club}</span> : null}
       </p>
     </div>
   );
