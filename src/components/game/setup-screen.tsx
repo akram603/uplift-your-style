@@ -7,6 +7,8 @@ import {
 } from "@/lib/formations";
 import {
   availableCountries,
+  availableLeagues,
+  availableClubs,
   filterPool,
   type PoolFilterConfig,
 } from "@/lib/players";
@@ -21,9 +23,12 @@ const TEAM_SIZES: TeamSize[] = [5, 6, 11];
 
 const FILTERS: { kind: FilterKind; label: string; desc: string }[] = [
   { kind: "all", label: "All Players", desc: "Everyone in the pool" },
-  { kind: "current", label: "Current Stars", desc: "Active players only" },
-  { kind: "retired", label: "Legends", desc: "Icons of the past" },
+  { kind: "current", label: "FC26 Squad Pool", desc: "1000 real current players" },
+  { kind: "legends", label: "Elite Only", desc: "88 OVR and above" },
+  { kind: "retired", label: "Retired Icons", desc: "Legends of the past" },
   { kind: "women", label: "Women's Stars", desc: "Icons of the women's game" },
+  { kind: "league", label: "One League", desc: "Pick a single competition" },
+  { kind: "club", label: "One Club", desc: "Draft from a single club" },
   { kind: "country", label: "One Nation", desc: "Pick a single country" },
 ];
 
@@ -48,12 +53,21 @@ export function SetupScreen({
   const [teamSize, setTeamSize] = useState<TeamSize>(5);
   const [filterKind, setFilterKind] = useState<FilterKind>("all");
   const [country, setCountry] = useState<string>("");
+  const [league, setLeague] = useState<string>("");
+  const [club, setClub] = useState<string>("");
   const [numOpponents, setNumOpponents] = useState(3);
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
   const [formationId, setFormationId] = useState<string>(defaultFormationId(5));
 
   const countries = useMemo(() => availableCountries(), []);
-  const filter: PoolFilterConfig = { kind: filterKind, country: country || countries[0] || "" };
+  const leagues = useMemo(() => availableLeagues(), []);
+  const clubs = useMemo(() => availableClubs(), []);
+  const filter: PoolFilterConfig = {
+    kind: filterKind,
+    country: country || countries[0] || "",
+    league: league || leagues[0] || "",
+    club: club || clubs[0] || "",
+  };
   const poolSize = filterPool(filter).length;
   const needed = teamSize * 2;
   const enough = poolSize >= needed;
@@ -170,6 +184,46 @@ export function SetupScreen({
               className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             >
               {countries.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {filterKind === "league" && (
+          <div className="mt-3">
+            <label htmlFor="league" className="mb-1.5 block text-xs font-medium text-muted-foreground">
+              Choose league
+            </label>
+            <select
+              id="league"
+              value={league || leagues[0]}
+              onChange={(e) => setLeague(e.target.value)}
+              className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            >
+              {leagues.map((l) => (
+                <option key={l} value={l}>
+                  {l}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {filterKind === "club" && (
+          <div className="mt-3">
+            <label htmlFor="club" className="mb-1.5 block text-xs font-medium text-muted-foreground">
+              Choose club
+            </label>
+            <select
+              id="club"
+              value={club || clubs[0]}
+              onChange={(e) => setClub(e.target.value)}
+              className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            >
+              {clubs.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>
