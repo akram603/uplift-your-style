@@ -155,11 +155,11 @@ function SinglePlayer() {
   }, []);
 
   const beginRound = useCallback((r: number, currentPool: Player[], currentTeams: Team[]) => {
-    const state = startRound(r, currentPool, currentTeams);
+    const state = startRound(r, currentPool, currentTeams, teamSize, formationId);
     setPool(currentPool.filter((p) => p.id !== state.revealed.id && p.id !== state.hidden.id));
     setAuction(state);
     setRound(r);
-  }, []);
+  }, [teamSize, formationId]);
 
   const handleStart = useCallback(
     (setup: SetupResult) => {
