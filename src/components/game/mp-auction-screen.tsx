@@ -92,11 +92,7 @@ export function MpAuctionScreen({
               {state.highBidderId ? `$${state.currentBid}M` : "—"}
             </div>
             <span className="text-[11px] text-muted-foreground">
-              {state.phase === "bidding"
-                ? myTurn
-                  ? "Your move"
-                  : `Waiting for ${rival.name}…`
-                : "Round resolved"}
+              {bidding ? `Open bidding vs ${rival.name}` : "Round resolved"}
             </span>
           </div>
         </div>
@@ -104,6 +100,13 @@ export function MpAuctionScreen({
         <div className="grid gap-4 sm:grid-cols-2">
           <RevealedCard player={state.revealed} />
           {bidding ? (
+            <HiddenCard hint="Whoever drops out of this race receives the hidden player." />
+          ) : (
+            <HiddenRevealedCard player={state.hidden} />
+          )}
+        </div>
+
+        {bidding ? (
           <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
