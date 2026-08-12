@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { RevealedCard, HiddenCard, HiddenRevealedCard } from "@/components/game/player-card";
 import { SquadDashboard } from "@/components/game/squad-dashboard";
 import { hiddenCost, minMpBid, other, type MpAction, type MpState, type PeerId } from "@/lib/mp-game";
+import { Timer } from "lucide-react";
 import { sfx } from "@/lib/sfx";
 import { ArrowRight, Flag, Gavel, Plus, Wifi } from "lucide-react";
 
@@ -18,47 +19,56 @@ export function MpAuctionScreen({
   state,
   meId,
   onAction,
+  controlledIds,
 }: {
   state: MpState;
   meId: PeerId;
   onAction: (action: MpAction) => void;
+  /** Which managers can bid from this device (local play controls both). */
+  controlledIds?: PeerId[];
 }) {
+  const controlled = controlledIds ?? [meId];
   const me = state.teams[meId];
   const rival = state.teams[other(meId)];
-  const myTurn = state.phase === "bidding" && state.turnId === meId;
+  const bidding = state.phase === "bidding";
   const min = minMpBid(state);
-  const canAfford = min <= me.budget;
 
-  const [bidInput, setBidInput] = useState(String(min));
+  // Live countdown — anyone may type any amount until the hammer falls.
+  const [left, setLeft] = useState(() => Math.max(0, Math.ceil((state.endsAt - Date.now()) / 1000)));
   useEffect(() => {
-    setBidInput(String(min));
-  }, [min, state.round]);
+    if (!bidding) return;
+    const tick = () => setLeft(Math.max(0, Math.ceil((state.endsAt - Date.now()) / 1000)));
+    tick();
+    const t = window.setInterval(tick, 250);
+    return () => window.clearInterval(t);
+  }, [state.endsAt, bidding, state.round]);
 
-  const parsed = Number.parseInt(bidInput, 10);
-  const bidValid = myTurn && Number.isFinite(parsed) && parsed >= min && parsed <= me.budget;
-  let bidError: string | null = null;
-  if (myTurn && bidInput.trim() !== "") {
-    if (!Number.isFinite(parsed)) bidError = "Enter a number";
-    else if (parsed < min) bidError = `Minimum bid is $${min}M`;
-    else if (parsed > me.budget) bidError = `Over budget ($${me.budget}M left)`;
-  }
+  const firedRef = useRef(false);
+  useEffect(() => {
+    firedRef.current = false;
+  }, [state.endsAt, state.round]);
+  useEffect(() => {
+    if (!bidding || left > 0 || firedRef.current) return;
+    if (!controlled.includes("host") && meId !== "host") return;
+    firedRef.current = true;
+    onAction({ type: "timeout" });
+  }, [left, bidding, controlled, meId, onAction]);
 
   const result = state.result;
 
-  // Resolution sound when the round flips to resolved.
   const prevPhase = useRef(state.phase);
   useEffect(() => {
     if (prevPhase.current === "bidding" && state.phase === "resolved") sfx.win();
     prevPhase.current = state.phase;
   }, [state.phase]);
 
-  const raise = (amount: number) => {
+  const raise = (by: PeerId, amount: number) => {
     sfx.bid();
-    onAction({ type: "raise", by: meId, amount });
+    onAction({ type: "raise", by, amount });
   };
-  const concede = () => {
+  const concede = (by: PeerId) => {
     sfx.hidden();
-    onAction({ type: "concede", by: meId });
+    onAction({ type: "concede", by });
   };
 
   return (
@@ -93,90 +103,33 @@ export function MpAuctionScreen({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <RevealedCard player={state.revealed} />
-          {state.phase === "bidding" ? (
-            <HiddenCard hint="Whoever drops out of this race receives the hidden player." />
-          ) : (
-            <HiddenRevealedCard player={state.hidden} />
-          )}
-        </div>
-
-        {state.phase === "bidding" ? (
-          <div className="rounded-2xl border border-border bg-card p-4">
-            <label
-              htmlFor="mp-bid"
-              className="mb-2 block text-xs font-semibold uppercase tracking-widest text-muted-foreground"
-            >
-              Your bid (in $M)
-            </label>
-            <div className="flex items-stretch gap-2">
-              <div className="relative flex-1">
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-mono text-sm text-muted-foreground">
-                  $
-                </span>
-                <input
-                  id="mp-bid"
-                  type="number"
-                  inputMode="numeric"
-                  min={min}
-                  max={me.budget}
-                  value={bidInput}
-                  disabled={!myTurn || !canAfford}
-                  onChange={(e) => setBidInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && bidValid) raise(parsed);
-                  }}
-                  className={cn(
-                    "h-12 w-full rounded-xl border bg-background pl-7 pr-4 font-mono text-lg font-semibold outline-none transition-colors",
-                    "focus:border-primary focus:ring-2 focus:ring-primary/30",
-                    bidError ? "border-destructive" : "border-border",
-                    (!myTurn || !canAfford) && "cursor-not-allowed opacity-50",
-                  )}
-                />
-              </div>
-              <Button
-                type="button"
-                variant="secondary"
-                className="h-12 w-12 p-0"
-                disabled={!myTurn || !canAfford}
-                onClick={() =>
-                  setBidInput(
-                    String(
-                      Math.min(me.budget, Math.max(min, (Number.isFinite(parsed) ? parsed : min) + 2)),
-                    ),
-                  )
-                }
-                aria-label="Increase bid"
+          {bidding ? (
+          <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Free bidding — any amount, any time
+              </span>
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-sm font-bold",
+                  left <= 5 ? "bg-destructive/15 text-destructive" : "bg-primary/10 text-primary",
+                )}
               >
-                <Plus className="h-4 w-4" />
-              </Button>
+                <Timer className="h-3.5 w-3.5" /> {left}s
+              </span>
             </div>
-            <p
-              className={cn(
-                "mt-1.5 min-h-[1rem] text-xs",
-                bidError ? "text-destructive" : "text-muted-foreground",
-              )}
-            >
-              {bidError ??
-                (myTurn
-                  ? `Enter at least $${min}M · $${me.budget}M budget remaining`
-                  : `${rival.name} is deciding…`)}
-            </p>
-
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <Button className="h-12 text-base" disabled={!bidValid} onClick={() => raise(parsed)}>
-                <Gavel className="h-4 w-4" />
-                Place Bid
-              </Button>
-              <Button
-                variant="secondary"
-                className="h-12 text-base"
-                disabled={!myTurn}
-                onClick={concede}
-              >
-                <Flag className="h-4 w-4" />
-                Drop out · take hidden (~${hiddenCost(state, meId)}M)
-              </Button>
-            </div>
+            {controlled.map((id) => (
+              <BidRow
+                key={id}
+                label={state.teams[id].name}
+                budget={state.teams[id].budget}
+                min={min}
+                leading={state.highBidderId === id}
+                onBid={(amount) => raise(id, amount)}
+                onConcede={() => concede(id)}
+                hiddenCost={hiddenCost(state, id)}
+              />
+            ))}
           </div>
         ) : state.phase === "resolved" && result ? (
           <div className="animate-pop rounded-2xl border border-border bg-card p-4">
