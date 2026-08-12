@@ -6,7 +6,7 @@ import { SquadDashboard } from "@/components/game/squad-dashboard";
 import { hiddenCost, minMpBid, other, type MpAction, type MpState, type PeerId } from "@/lib/mp-game";
 import { Timer } from "lucide-react";
 import { sfx } from "@/lib/sfx";
-import { ArrowRight, Flag, Gavel, Plus, Wifi } from "lucide-react";
+import { ArrowRight, Flag, Gavel, Wifi } from "lucide-react";
 
 const LOG_DOT: Record<string, string> = {
   info: "bg-muted-foreground",
@@ -211,6 +211,87 @@ export function MpAuctionScreen({
           </ul>
         </div>
       </aside>
+    </div>
+  );
+}
+
+/** Free-form bid entry for one manager: any amount above the current bid. */
+function BidRow({
+  label,
+  budget,
+  min,
+  leading,
+  onBid,
+  onConcede,
+  hiddenCost,
+}: {
+  label: string;
+  budget: number;
+  min: number;
+  leading: boolean;
+  onBid: (amount: number) => void;
+  onConcede: () => void;
+  hiddenCost: number;
+}) {
+  const [value, setValue] = useState("");
+  const parsed = Number.parseInt(value, 10);
+  const valid = Number.isFinite(parsed) && parsed >= min && parsed <= budget;
+  let error: string | null = null;
+  if (value.trim() !== "") {
+    if (!Number.isFinite(parsed)) error = "Enter a number";
+    else if (parsed < min) error = `Must beat $${min - 1}M`;
+    else if (parsed > budget) error = `Over budget ($${budget}M left)`;
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-background/40 p-3">
+      <div className="mb-2 flex items-center justify-between text-xs">
+        <span className={cn("font-semibold", leading && "text-primary")}>
+          {label}
+          {leading ? " · leading" : ""}
+        </span>
+        <span className="font-mono text-money">${budget}M</span>
+      </div>
+      <div className="flex items-stretch gap-2">
+        <div className="relative flex-1">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-mono text-sm text-muted-foreground">
+            $
+          </span>
+          <input
+            type="number"
+            inputMode="numeric"
+            placeholder="Type any amount"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && valid) {
+                onBid(parsed);
+                setValue("");
+              }
+            }}
+            className={cn(
+              "h-12 w-full rounded-xl border bg-background pl-7 pr-3 font-mono text-lg font-semibold outline-none focus:border-primary",
+              error ? "border-destructive" : "border-border",
+            )}
+          />
+        </div>
+        <Button
+          className="h-12"
+          disabled={!valid}
+          onClick={() => {
+            onBid(parsed);
+            setValue("");
+          }}
+        >
+          <Gavel className="h-4 w-4" /> Bid
+        </Button>
+        <Button variant="secondary" className="h-12" onClick={onConcede}>
+          <Flag className="h-4 w-4" /> Drop (~${hiddenCost}M)
+        </Button>
+      </div>
+      <p className={cn("mt-1 text-[11px]", error ? "text-destructive" : "text-muted-foreground")}>
+        {error ?? `Bidding starts at $0M — enter at least $${min}M`}
+      </p>
     </div>
   );
 }
