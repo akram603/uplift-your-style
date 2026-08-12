@@ -1,5 +1,7 @@
-// Player pool for the draft. Kept as plain data so it can later be swapped
-// for a remote source (API / database) without touching game logic.
+// Player pool for the draft. Current-era players come from the FC26 stats sheet
+// (1000 real players); retired legends and women's icons stay hand-curated.
+
+import { FC26_ROWS } from './players-fc26'
 
 export type Position = 'GK' | 'DEF' | 'MID' | 'FWD'
 export type Era = 'current' | 'retired' | 'women'
@@ -17,64 +19,41 @@ export interface Player {
   era: Era
   /** Baseline market value in $M, used to seed AI valuations. */
   value: number
+  /** Extended FC26 attributes (present for current-era players). */
+  potential?: number
+  age?: number
+  dribbling?: number
+  physical?: number
+  club?: string
+  league?: string
+  /** Detailed role list, e.g. "ST, LW". */
+  roles?: string
 }
 
-// A compact but varied pool: current stars + retired legends + women's icons.
-export const PLAYERS: Player[] = [
-  // --- Current men's stars ---
-  { id: 'mbappe', name: 'Kylian Mbappé', country: 'France', position: 'FWD', ovr: 91, pace: 97, shooting: 90, passing: 80, defending: 36, era: 'current', value: 78 },
-  { id: 'haaland', name: 'Erling Haaland', country: 'Norway', position: 'FWD', ovr: 91, pace: 89, shooting: 93, passing: 66, defending: 45, era: 'current', value: 76 },
-  { id: 'bellingham', name: 'Jude Bellingham', country: 'England', position: 'MID', ovr: 90, pace: 82, shooting: 84, passing: 86, defending: 78, era: 'current', value: 74 },
-  { id: 'vinicius', name: 'Vinícius Júnior', country: 'Brazil', position: 'FWD', ovr: 90, pace: 95, shooting: 84, passing: 81, defending: 29, era: 'current', value: 72 },
-  { id: 'yamal', name: 'Lamine Yamal', country: 'Spain', position: 'FWD', ovr: 88, pace: 91, shooting: 82, passing: 85, defending: 35, era: 'current', value: 62 },
-  { id: 'rodri', name: 'Rodri', country: 'Spain', position: 'MID', ovr: 90, pace: 66, shooting: 78, passing: 87, defending: 87, era: 'current', value: 70 },
-  { id: 'debruyne', name: 'Kevin De Bruyne', country: 'Belgium', position: 'MID', ovr: 90, pace: 72, shooting: 86, passing: 93, defending: 64, era: 'current', value: 60 },
-  { id: 'kane', name: 'Harry Kane', country: 'England', position: 'FWD', ovr: 90, pace: 68, shooting: 92, passing: 84, defending: 47, era: 'current', value: 62 },
-  { id: 'salah', name: 'Mohamed Salah', country: 'Egypt', position: 'FWD', ovr: 89, pace: 89, shooting: 87, passing: 81, defending: 45, era: 'current', value: 58 },
-  { id: 'vandijk', name: 'Virgil van Dijk', country: 'Netherlands', position: 'DEF', ovr: 89, pace: 78, shooting: 60, passing: 71, defending: 90, era: 'current', value: 50 },
-  { id: 'martinez', name: 'Lautaro Martínez', country: 'Argentina', position: 'FWD', ovr: 89, pace: 85, shooting: 88, passing: 76, defending: 46, era: 'current', value: 56 },
-  { id: 'foden', name: 'Phil Foden', country: 'England', position: 'MID', ovr: 88, pace: 82, shooting: 83, passing: 85, defending: 60, era: 'current', value: 54 },
-  { id: 'saka', name: 'Bukayo Saka', country: 'England', position: 'FWD', ovr: 87, pace: 86, shooting: 82, passing: 82, defending: 52, era: 'current', value: 52 },
-  { id: 'wirtz', name: 'Florian Wirtz', country: 'Germany', position: 'MID', ovr: 87, pace: 82, shooting: 80, passing: 87, defending: 55, era: 'current', value: 50 },
-  { id: 'musiala', name: 'Jamal Musiala', country: 'Germany', position: 'MID', ovr: 88, pace: 84, shooting: 82, passing: 88, defending: 55, era: 'current', value: 56 },
-  { id: 'pedri', name: 'Pedri', country: 'Spain', position: 'MID', ovr: 87, pace: 76, shooting: 74, passing: 88, defending: 63, era: 'current', value: 48 },
-  { id: 'palmer', name: 'Cole Palmer', country: 'England', position: 'MID', ovr: 86, pace: 76, shooting: 85, passing: 86, defending: 50, era: 'current', value: 48 },
-  { id: 'kimmich', name: 'Joshua Kimmich', country: 'Germany', position: 'MID', ovr: 88, pace: 68, shooting: 72, passing: 89, defending: 80, era: 'current', value: 50 },
-  { id: 'brunof', name: 'Bruno Fernandes', country: 'Portugal', position: 'MID', ovr: 87, pace: 76, shooting: 85, passing: 88, defending: 62, era: 'current', value: 48 },
-  { id: 'odegaard', name: 'Martin Ødegaard', country: 'Norway', position: 'MID', ovr: 87, pace: 74, shooting: 80, passing: 89, defending: 58, era: 'current', value: 46 },
-  { id: 'rice', name: 'Declan Rice', country: 'England', position: 'MID', ovr: 88, pace: 74, shooting: 75, passing: 82, defending: 89, era: 'current', value: 50 },
-  { id: 'valverde', name: 'Federico Valverde', country: 'Uruguay', position: 'MID', ovr: 88, pace: 88, shooting: 82, passing: 84, defending: 78, era: 'current', value: 52 },
-  { id: 'bsilva', name: 'Bernardo Silva', country: 'Portugal', position: 'MID', ovr: 87, pace: 78, shooting: 80, passing: 87, defending: 62, era: 'current', value: 46 },
-  { id: 'bfernan', name: 'Enzo Fernández', country: 'Argentina', position: 'MID', ovr: 85, pace: 72, shooting: 76, passing: 85, defending: 74, era: 'current', value: 42 },
-  { id: 'alisson', name: 'Alisson', country: 'Brazil', position: 'GK', ovr: 89, pace: 55, shooting: 22, passing: 75, defending: 90, era: 'current', value: 42 },
-  { id: 'courtois', name: 'Thibaut Courtois', country: 'Belgium', position: 'GK', ovr: 89, pace: 50, shooting: 20, passing: 70, defending: 90, era: 'current', value: 40 },
-  { id: 'terstegen', name: 'Marc-André ter Stegen', country: 'Germany', position: 'GK', ovr: 89, pace: 52, shooting: 20, passing: 74, defending: 90, era: 'current', value: 42 },
-  { id: 'donnarumma', name: 'Gianluigi Donnarumma', country: 'Italy', position: 'GK', ovr: 88, pace: 50, shooting: 20, passing: 68, defending: 89, era: 'current', value: 40 },
-  { id: 'hakimi', name: 'Achraf Hakimi', country: 'Morocco', position: 'DEF', ovr: 86, pace: 93, shooting: 68, passing: 79, defending: 80, era: 'current', value: 44 },
-  { id: 'theo', name: 'Theo Hernández', country: 'France', position: 'DEF', ovr: 85, pace: 92, shooting: 72, passing: 77, defending: 79, era: 'current', value: 40 },
-  { id: 'trent', name: 'Trent Alexander-Arnold', country: 'England', position: 'DEF', ovr: 87, pace: 78, shooting: 66, passing: 90, defending: 76, era: 'current', value: 46 },
-  { id: 'saliba', name: 'William Saliba', country: 'France', position: 'DEF', ovr: 88, pace: 82, shooting: 40, passing: 72, defending: 90, era: 'current', value: 48 },
-  { id: 'rdias', name: 'Rúben Dias', country: 'Portugal', position: 'DEF', ovr: 88, pace: 72, shooting: 42, passing: 74, defending: 90, era: 'current', value: 46 },
-  { id: 'gvardiol', name: 'Joško Gvardiol', country: 'Croatia', position: 'DEF', ovr: 86, pace: 84, shooting: 62, passing: 75, defending: 85, era: 'current', value: 42 },
-  { id: 'kmj', name: 'Kim Min-jae', country: 'South Korea', position: 'DEF', ovr: 86, pace: 80, shooting: 40, passing: 70, defending: 88, era: 'current', value: 36 },
-  { id: 'leao', name: 'Rafael Leão', country: 'Portugal', position: 'FWD', ovr: 87, pace: 92, shooting: 82, passing: 78, defending: 40, era: 'current', value: 46 },
-  { id: 'osimhen', name: 'Victor Osimhen', country: 'Nigeria', position: 'FWD', ovr: 88, pace: 90, shooting: 86, passing: 70, defending: 42, era: 'current', value: 55 },
-  { id: 'son', name: 'Heung-min Son', country: 'South Korea', position: 'FWD', ovr: 87, pace: 87, shooting: 86, passing: 80, defending: 42, era: 'current', value: 45 },
-  { id: 'kvara', name: 'Khvicha Kvaratskhelia', country: 'Georgia', position: 'FWD', ovr: 86, pace: 87, shooting: 80, passing: 82, defending: 40, era: 'current', value: 48 },
-  { id: 'isak', name: 'Alexander Isak', country: 'Sweden', position: 'FWD', ovr: 87, pace: 88, shooting: 84, passing: 76, defending: 44, era: 'current', value: 46 },
-  { id: 'gyokeres', name: 'Viktor Gyökeres', country: 'Sweden', position: 'FWD', ovr: 86, pace: 84, shooting: 85, passing: 75, defending: 42, era: 'current', value: 44 },
-  { id: 'julian', name: 'Julián Álvarez', country: 'Argentina', position: 'FWD', ovr: 86, pace: 82, shooting: 84, passing: 80, defending: 48, era: 'current', value: 44 },
-  { id: 'watkins', name: 'Ollie Watkins', country: 'England', position: 'FWD', ovr: 85, pace: 84, shooting: 83, passing: 76, defending: 44, era: 'current', value: 40 },
-  { id: 'doku', name: 'Jérémy Doku', country: 'Belgium', position: 'FWD', ovr: 84, pace: 96, shooting: 78, passing: 80, defending: 38, era: 'current', value: 40 },
-  { id: 'olmo', name: 'Dani Olmo', country: 'Spain', position: 'MID', ovr: 85, pace: 80, shooting: 82, passing: 84, defending: 56, era: 'current', value: 42 },
-  { id: 'barella', name: 'Nicolò Barella', country: 'Italy', position: 'MID', ovr: 86, pace: 78, shooting: 78, passing: 84, defending: 72, era: 'current', value: 40 },
-  { id: 'tchouameni', name: 'Aurélien Tchouaméni', country: 'France', position: 'MID', ovr: 87, pace: 76, shooting: 70, passing: 80, defending: 86, era: 'current', value: 44 },
-  { id: 'macallister', name: 'Alexis Mac Allister', country: 'Argentina', position: 'MID', ovr: 86, pace: 74, shooting: 78, passing: 85, defending: 70, era: 'current', value: 40 },
-  { id: 'szoboszlai', name: 'Dominik Szoboszlai', country: 'Hungary', position: 'MID', ovr: 86, pace: 80, shooting: 82, passing: 84, defending: 62, era: 'current', value: 42 },
-  { id: 'lewandowski', name: 'Robert Lewandowski', country: 'Poland', position: 'FWD', ovr: 88, pace: 72, shooting: 90, passing: 78, defending: 44, era: 'current', value: 40 },
-  { id: 'modric', name: 'Luka Modrić', country: 'Croatia', position: 'MID', ovr: 86, pace: 66, shooting: 78, passing: 90, defending: 64, era: 'current', value: 30 },
-  { id: 'diasd', name: 'Diogo Costa', country: 'Portugal', position: 'GK', ovr: 87, pace: 58, shooting: 20, passing: 76, defending: 88, era: 'current', value: 36 },
+const FC26_PLAYERS: Player[] = FC26_ROWS.map(
+  ([id, name, country, pos, roles, ovr, potential, age, pace, shooting, passing, dribbling, defending, physical, value, club, league]) => ({
+    id,
+    name,
+    country,
+    position: pos as Position,
+    ovr,
+    pace,
+    shooting,
+    passing,
+    defending,
+    era: 'current' as Era,
+    value,
+    potential,
+    age,
+    dribbling,
+    physical,
+    club,
+    league,
+    roles,
+  }),
+)
 
+const LEGACY_PLAYERS: Player[] = [
   // --- Retired legends ---
   { id: 'pele', name: 'Pelé', country: 'Brazil', position: 'FWD', ovr: 95, pace: 90, shooting: 94, passing: 90, defending: 36, era: 'retired', value: 88 },
   { id: 'cruyff', name: 'Johan Cruyff', country: 'Netherlands', position: 'FWD', ovr: 94, pace: 89, shooting: 90, passing: 93, defending: 38, era: 'retired', value: 84 },
@@ -155,9 +134,24 @@ export const PLAYERS: Player[] = [
   { id: 'rapinoe', name: 'Megan Rapinoe', country: 'USA', position: 'FWD', ovr: 87, pace: 72, shooting: 84, passing: 86, defending: 38, era: 'women', value: 32 },
 ]
 
+/** Full pool: 1000 FC26 current players + retired legends + women's icons. */
+export const PLAYERS: Player[] = [...FC26_PLAYERS, ...LEGACY_PLAYERS]
+
 export interface PoolFilterConfig {
-  kind: 'all' | 'country' | 'retired' | 'current' | 'women'
+  kind: 'all' | 'country' | 'retired' | 'current' | 'women' | 'league' | 'club' | 'legends'
   country?: string
+  league?: string
+  club?: string
+}
+
+/** All distinct leagues in the pool, sorted alphabetically. */
+export function availableLeagues(): string[] {
+  return Array.from(new Set(PLAYERS.map((p) => p.league).filter(Boolean) as string[])).sort()
+}
+
+/** All distinct clubs in the pool, sorted alphabetically. */
+export function availableClubs(): string[] {
+  return Array.from(new Set(PLAYERS.map((p) => p.club).filter(Boolean) as string[])).sort()
 }
 
 /** All distinct countries available in the pool, sorted alphabetically. */
@@ -174,6 +168,12 @@ export function filterPool(config: PoolFilterConfig): Player[] {
       return PLAYERS.filter((p) => p.era === 'current')
     case 'women':
       return PLAYERS.filter((p) => p.era === 'women')
+    case 'league':
+      return PLAYERS.filter((p) => p.league === config.league)
+    case 'club':
+      return PLAYERS.filter((p) => p.club === config.club)
+    case 'legends':
+      return PLAYERS.filter((p) => p.ovr >= 88)
     case 'country':
       return PLAYERS.filter((p) => p.country === config.country)
     case 'all':
