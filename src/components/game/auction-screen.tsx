@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { AuctionState, Team } from "@/lib/game";
-import { minLegalBid, increment, loanHeadroom, MAX_LOAN, LOAN_INTEREST } from "@/lib/game";
+import { minLegalBid, increment, hiddenPriceFor, loanHeadroom, MAX_LOAN, LOAN_INTEREST } from "@/lib/game";
 import { RevealedCard, HiddenCard, HiddenRevealedCard } from "@/components/game/player-card";
 import { Button } from "@/components/ui/button";
 import { sfx } from "@/lib/sfx";
@@ -38,7 +38,7 @@ export function AuctionScreen({
   const human = teams.find((t) => t.isHuman)!;
   const min = minLegalBid(state);
   const canAffordMin = min <= human.budget;
-  const takeHiddenCost = Math.max(2, Math.round(state.base * 0.8));
+  const takeHiddenCost = hiddenPriceFor(state);
   const canTakeHidden = state.phase === "bidding" && takeHiddenCost <= human.budget;
   const highBidderName = teams.find((t) => t.id === state.highBidderId)?.name;
   const leadingIsHuman = state.highBidderId === human.id;
@@ -100,7 +100,7 @@ export function AuctionScreen({
               Round {state.round} of {totalRounds}
             </span>
             <div className="font-display text-lg font-semibold">
-              Opening price ${state.base}M
+              Bidding opens at $0M — type any amount
             </div>
           </div>
           <div className="text-right">

@@ -79,7 +79,7 @@ export function MpAuctionScreen({
             <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               Round {state.round} of {state.totalRounds}
             </span>
-            <div className="font-display text-lg font-semibold">Opening price ${state.base}M</div>
+            <div className="font-display text-lg font-semibold">Bidding opens at $0M</div>
           </div>
           <div className="text-right">
             <span className="text-xs text-muted-foreground">Current high bid</span>
