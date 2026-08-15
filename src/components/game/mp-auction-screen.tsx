@@ -215,8 +215,11 @@ function MpAuctionScreenBase({
   );
 }
 
+/** Auction view; memoised so peer/timer updates don't re-render the tree twice. */
+export const MpAuctionScreen = memo(MpAuctionScreenBase);
+
 /** Free-form bid entry for one manager: any amount above the current bid. */
-function BidRow({
+const BidRow = memo(function BidRow({
   label,
   budget,
   min,
@@ -294,4 +297,4 @@ function BidRow({
       </p>
     </div>
   );
-}
+});

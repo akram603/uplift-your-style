@@ -7,6 +7,8 @@ import type { PeerId } from "@/lib/mp-game";
 import { FastForward, RotateCcw, Trophy } from "lucide-react";
 
 /** Live text commentary of a simulated head-to-head, plus the leaderboard. */
+export const MatchSimScreen = memo(MatchSimScreenBase);
+
 function MatchSimScreenBase({
   sim,
   names,
