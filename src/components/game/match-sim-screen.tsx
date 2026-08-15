@@ -95,7 +95,7 @@ function MatchSimScreenBase({
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Live commentary
         </h3>
-        <ul className="max-h-72 space-y-2 overflow-y-auto pr-1">
+        <ul className="max-h-72 space-y-2 overflow-y-auto pr-1 [contain:content] [content-visibility:auto] overscroll-contain [-webkit-overflow-scrolling:touch]">
           {feed.map((e, i) => (
             <li key={`${e.minute}-${i}`} className="flex gap-2 text-sm leading-relaxed">
               <span className="w-9 shrink-0 font-mono text-xs text-muted-foreground">
