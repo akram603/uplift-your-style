@@ -4,20 +4,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/*
- * Design system definition.
- *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
- */
-
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -65,45 +51,43 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Single dark stadium-night theme: deep pitch greens with a floodlit gold accent. */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(0.19 0.03 156);
-  --foreground: oklch(0.96 0.01 150);
-  --card: oklch(0.24 0.035 157);
-  --card-foreground: oklch(0.96 0.01 150);
-  --popover: oklch(0.24 0.035 157);
-  --popover-foreground: oklch(0.96 0.01 150);
-  --primary: oklch(0.72 0.17 149);
-  --primary-foreground: oklch(0.17 0.04 156);
-  --secondary: oklch(0.29 0.035 157);
-  --secondary-foreground: oklch(0.96 0.01 150);
-  --muted: oklch(0.29 0.035 157);
-  --muted-foreground: oklch(0.72 0.03 152);
-  --accent: oklch(0.32 0.045 157);
-  --accent-foreground: oklch(0.96 0.01 150);
+  --radius: 0.75rem;
+  --background: oklch(0.16 0.008 250);
+  --foreground: oklch(0.95 0.004 250);
+  --card: oklch(0.21 0.01 250);
+  --card-foreground: oklch(0.95 0.004 250);
+  --popover: oklch(0.21 0.01 250);
+  --popover-foreground: oklch(0.95 0.004 250);
+  --primary: oklch(0.78 0.14 80);
+  --primary-foreground: oklch(0.16 0.008 250);
+  --secondary: oklch(0.27 0.012 250);
+  --secondary-foreground: oklch(0.95 0.004 250);
+  --muted: oklch(0.25 0.01 250);
+  --muted-foreground: oklch(0.68 0.015 250);
+  --accent: oklch(0.30 0.015 250);
+  --accent-foreground: oklch(0.95 0.004 250);
   --destructive: oklch(0.62 0.21 24);
   --destructive-foreground: oklch(0.98 0.005 150);
-  --border: oklch(0.96 0.01 150 / 12%);
-  --input: oklch(0.96 0.01 150 / 16%);
-  --ring: oklch(0.72 0.17 149);
-  --money: oklch(0.83 0.15 85);
-  --pitch: oklch(0.34 0.07 152);
-  --chart-1: oklch(0.72 0.17 149);
-  --chart-2: oklch(0.83 0.15 85);
+  --border: oklch(0.95 0.004 250 / 10%);
+  --input: oklch(0.95 0.004 250 / 14%);
+  --ring: oklch(0.78 0.14 80);
+  --money: oklch(0.80 0.14 80);
+  --pitch: oklch(0.24 0.02 250);
+  --chart-1: oklch(0.78 0.14 80);
+  --chart-2: oklch(0.65 0.18 220);
   --chart-3: oklch(0.6 0.118 184.704);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.22 0.035 157);
-  --sidebar-foreground: oklch(0.96 0.01 150);
-  --sidebar-primary: oklch(0.72 0.17 149);
-  --sidebar-primary-foreground: oklch(0.17 0.04 156);
-  --sidebar-accent: oklch(0.29 0.035 157);
-  --sidebar-accent-foreground: oklch(0.96 0.01 150);
-  --sidebar-border: oklch(0.96 0.01 150 / 12%);
-  --sidebar-ring: oklch(0.72 0.17 149);
+  --sidebar: oklch(0.19 0.008 250);
+  --sidebar-foreground: oklch(0.95 0.004 250);
+  --sidebar-primary: oklch(0.78 0.14 80);
+  --sidebar-primary-foreground: oklch(0.16 0.008 250);
+  --sidebar-accent: oklch(0.27 0.012 250);
+  --sidebar-accent-foreground: oklch(0.95 0.004 250);
+  --sidebar-border: oklch(0.95 0.004 250 / 10%);
+  --sidebar-ring: oklch(0.78 0.14 80);
 }
-
 
 @layer base {
   * {
@@ -114,6 +98,10 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    background-image:
+      radial-gradient(ellipse at top, oklch(0.22 0.015 250 / 60%), transparent 60%),
+      radial-gradient(ellipse at bottom, oklch(0.20 0.01 250 / 40%), transparent 60%);
+    background-attachment: fixed;
   }
 
   h1,
@@ -124,13 +112,48 @@
   }
 }
 
-/* ---------------------------------------------------------------------------
- * Motion: card reveals, pops, pulses and confetti.
- * ------------------------------------------------------------------------- */
+@layer components {
+  .glass {
+    background: oklch(0.23 0.012 250 / 55%);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid oklch(0.95 0.004 250 / 8%);
+  }
+
+  .glass-strong {
+    background: oklch(0.25 0.014 250 / 70%);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid oklch(0.95 0.004 250 / 10%);
+  }
+
+  .glass-gold {
+    background: oklch(0.78 0.14 80 / 8%);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid oklch(0.78 0.14 80 / 20%);
+  }
+
+  .text-gold-gradient {
+    background: linear-gradient(135deg, oklch(0.85 0.13 85), oklch(0.72 0.15 70));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  .glow-gold {
+    box-shadow: 0 0 24px oklch(0.78 0.14 80 / 15%), 0 0 48px oklch(0.78 0.14 80 / 8%);
+  }
+
+  .glow-soft {
+    box-shadow: 0 4px 24px oklch(0 10% 250 / 30%);
+  }
+}
 
 @layer utilities {
   .animate-card-in {
-    animation: card-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
   .animate-pop {
     animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
@@ -138,12 +161,21 @@
   .animate-pulse-soft {
     animation: pulse-soft 1.6s ease-in-out infinite;
   }
+  .animate-turn-flash {
+    animation: turn-flash 0.6s ease-out both;
+  }
+  .animate-slide-up {
+    animation: slide-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .animate-timer-ring {
+    animation: timer-ring 1s linear infinite;
+  }
 }
 
 @keyframes card-in {
   from {
     opacity: 0;
-    transform: translateY(14px) scale(0.98);
+    transform: translateY(16px) scale(0.97);
   }
   to {
     opacity: 1;
@@ -163,13 +195,23 @@
 }
 
 @keyframes pulse-soft {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.55;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes turn-flash {
+  0% { opacity: 0; transform: translateX(-8px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes timer-ring {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .confetti-piece {
@@ -191,4 +233,3 @@
     opacity: 0.55;
   }
 }
-

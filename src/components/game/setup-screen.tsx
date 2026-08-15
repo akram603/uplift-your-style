@@ -15,7 +15,7 @@ import {
 import { DIFFICULTIES, type Difficulty } from "@/lib/game";
 import { sfx } from "@/lib/sfx";
 import { cn } from "@/lib/utils";
-import { Users, Globe2, Gauge, LayoutGrid } from "lucide-react";
+import { Users, Globe as Globe2, Gauge, LayoutGrid } from "lucide-react";
 
 type FilterKind = PoolFilterConfig["kind"];
 
@@ -100,10 +100,10 @@ export function SetupScreen({
               type="button"
               onClick={() => pickTeamSize(size)}
               className={cn(
-                "rounded-xl border p-4 text-left transition-colors",
+                "glass rounded-xl p-4 text-left transition-all",
                 teamSize === size
-                  ? "border-primary bg-primary/10"
-                  : "border-border bg-card hover:border-primary/40",
+                  ? "glass-gold border-primary/40 glow-soft"
+                  : "hover:border-primary/30",
               )}
               aria-pressed={teamSize === size}
             >
@@ -128,10 +128,10 @@ export function SetupScreen({
                 type="button"
                 onClick={() => setFormationId(f.id)}
                 className={cn(
-                  "rounded-xl border p-3 text-left transition-colors",
+                  "glass rounded-xl p-3 text-left transition-all",
                   formationId === f.id
-                    ? "border-primary bg-primary/10"
-                    : "border-border bg-card hover:border-primary/40",
+                    ? "glass-gold border-primary/40 glow-soft"
+                    : "hover:border-primary/30",
                 )}
                 aria-pressed={formationId === f.id}
               >
@@ -156,10 +156,10 @@ export function SetupScreen({
               type="button"
               onClick={() => setFilterKind(f.kind)}
               className={cn(
-                "rounded-xl border p-3 text-left transition-colors",
+                "glass rounded-xl p-3 text-left transition-all",
                 filterKind === f.kind
-                  ? "border-primary bg-primary/10"
-                  : "border-border bg-card hover:border-primary/40",
+                  ? "glass-gold border-primary/40 glow-soft"
+                  : "hover:border-primary/30",
               )}
               aria-pressed={filterKind === f.kind}
             >
@@ -171,10 +171,7 @@ export function SetupScreen({
 
         {filterKind === "country" && (
           <div className="mt-3">
-            <label
-              htmlFor="country"
-              className="mb-1.5 block text-xs font-medium text-muted-foreground"
-            >
+            <label htmlFor="country" className="mb-1.5 block text-xs font-medium text-muted-foreground">
               Choose nation
             </label>
             <select
@@ -184,9 +181,7 @@ export function SetupScreen({
               className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             >
               {countries.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
+                <option key={c} value={c}>{c}</option>
               ))}
             </select>
           </div>
@@ -204,9 +199,7 @@ export function SetupScreen({
               className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             >
               {leagues.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
+                <option key={l} value={l}>{l}</option>
               ))}
             </select>
           </div>
@@ -224,9 +217,7 @@ export function SetupScreen({
               className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             >
               {clubs.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
+                <option key={c} value={c}>{c}</option>
               ))}
             </select>
           </div>
@@ -242,10 +233,10 @@ export function SetupScreen({
               type="button"
               onClick={() => setDifficulty(d.id)}
               className={cn(
-                "rounded-xl border p-3 text-left transition-colors",
+                "glass rounded-xl p-3 text-left transition-all",
                 difficulty === d.id
-                  ? "border-primary bg-primary/10"
-                  : "border-border bg-card hover:border-primary/40",
+                  ? "glass-gold border-primary/40 glow-soft"
+                  : "hover:border-primary/30",
               )}
               aria-pressed={difficulty === d.id}
             >
@@ -266,10 +257,10 @@ export function SetupScreen({
                 type="button"
                 onClick={() => setNumOpponents(n)}
                 className={cn(
-                  "h-11 w-11 rounded-lg border font-display text-lg font-bold transition-colors",
+                  "h-11 w-11 rounded-lg font-display text-lg font-bold transition-all",
                   numOpponents === n
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-card hover:border-primary/40",
+                    ? "glass-gold border-primary/40 text-primary glow-soft"
+                    : "glass hover:border-primary/30",
                 )}
                 aria-pressed={numOpponents === n}
               >
@@ -280,29 +271,20 @@ export function SetupScreen({
         </section>
       )}
 
-      <div className="rounded-xl border border-border bg-card/50 p-4">
+      <div className="glass rounded-xl p-4">
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Starting budget</span>
           <span className="font-mono font-semibold text-money">$100M</span>
         </div>
         <div className="mt-2 flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Players available</span>
-          <span
-            className={cn(
-              "font-mono font-semibold",
-              enough ? "text-foreground" : "text-destructive",
-            )}
-          >
+          <span className={cn("font-mono font-semibold", enough ? "text-foreground" : "text-destructive")}>
             {poolSize} / {needed} needed
           </span>
         </div>
       </div>
 
-      <Button
-        className="h-12 w-full text-base"
-        disabled={!enough}
-        onClick={start}
-      >
+      <Button className="h-12 w-full text-base glow-gold" disabled={!enough} onClick={start}>
         {enough ? ctaLabel : "Not enough players in this pool"}
       </Button>
     </div>

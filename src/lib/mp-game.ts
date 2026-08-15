@@ -1,6 +1,7 @@
-// Two-player (human vs human) auction engine for local network multiplayer.
-// The host owns the authoritative state; both peers apply the same reducer so
-// the host can simply broadcast the resulting snapshot after every action.
+// Two-player turn-based auction engine for online and local multiplayer.
+// Strict turn logic: players alternate, each with a countdown. On your turn
+// you either raise the bid (switching the turn to your opponent) or pass
+// (conceding the revealed player and taking the hidden one instead).
 
 import { filterPool, type Player, type PoolFilterConfig } from './players'
 import type { TeamSize } from './formations'
@@ -26,7 +27,6 @@ export interface MpResult {
 
 export interface MpState {
   phase: 'bidding' | 'resolved' | 'over' | 'match'
-  /** Monotonic revision — used to drop stale/out-of-order network frames. */
   rev: number
   teamSize: TeamSize
   formationId?: string | undefined
@@ -39,17 +39,12 @@ export interface MpState {
   base: number
   currentBid: number
   highBidderId: PeerId | null
-  /** Who opened this round (kept for display); anyone may bid at any time. */
   turnId: PeerId
-  /** Epoch ms when the live bidding countdown for this round expires. */
   endsAt: number
   result: MpResult | null
   log: LogEntry[]
-  /** Config kept so the next round of the series can be rebuilt in place. */
   config: MpConfig
-  /** Leaderboard: 3 points a win, 1 a draw, 0 a loss. */
   points: Record<PeerId, number>
-  /** Last simulated match, shown after the draft finishes. */
   match: MatchSim | null
 }
 
@@ -64,16 +59,13 @@ export interface MpConfig {
 
 export type MpAction =
   | { type: 'raise'; by: PeerId; amount: number }
-  | { type: 'concede'; by: PeerId }
-  | { type: 'next'; by: PeerId }
+  | { type: 'pass'; by: PeerId }
   | { type: 'timeout' }
+  | { type: 'next'; by: PeerId }
   | { type: 'simulate' }
   | { type: 'newDraft' }
 
-/** Seconds each player has to keep bidding before the hammer falls. */
-export const ROUND_SECONDS = 20
-/** Countdown restored after every bid. */
-export const BID_EXTENSION_SECONDS = 10
+export const TURN_SECONDS = 15
 
 let logId = 0
 function pushLog(state: MpState, kind: LogKind, text: string) {
@@ -90,7 +82,6 @@ function draw(
 ): { revealed: Player; hidden: Player; rest: Player[] } {
   let eligible = pool
   if (state) {
-    // Auction a position both squads still legally need (goalkeeper included).
     const need = positionNeedCounts(state.teams.host.squad, state.teamSize, state.formationId)
     eligible = playersForPosition(pool, pickNeededPosition(need))
   }
@@ -134,7 +125,7 @@ export function createMpGame(
     currentBid: 0,
     highBidderId: null,
     turnId: 'host',
-    endsAt: Date.now() + ROUND_SECONDS * 1000,
+    endsAt: Date.now() + TURN_SECONDS * 1000,
     result: null,
     log: [],
     config,
@@ -144,12 +135,11 @@ export function createMpGame(
   pushLog(
     state,
     'info',
-    `Round 1: ${revealed.name} (${revealed.position}) is up. Bidding opens at $0M — type any amount.`,
+    `Round 1: ${revealed.name} (${revealed.position}) is up. ${config.hostName} opens the bidding.`,
   )
   return state
 }
 
-/** Any amount above the current bid is legal (bidding starts at zero). */
 export function minMpBid(state: MpState): number {
   return state.highBidderId === null ? 1 : state.currentBid + 1
 }
@@ -174,9 +164,7 @@ function clone(state: MpState): MpState {
   }
 }
 
-/** Awards the revealed player to `winner` and the hidden one to the other side. */
-function settle(state: MpState, winner: PeerId): MpState {
-  const loser = other(winner)
+function settle(state: MpState, winner: PeerId, loser: PeerId): MpState {
   const price = Math.min(Math.max(1, state.currentBid), state.teams[winner].budget)
   const hidden = hiddenCost(state, loser)
   state.result = {
@@ -195,10 +183,10 @@ function settle(state: MpState, winner: PeerId): MpState {
   return state
 }
 
-/** Pure reducer: returns a new state, or the same state if the action is illegal. */
 export function reduceMp(prev: MpState, action: MpAction): MpState {
   if (action.type === 'raise') {
     if (prev.phase !== 'bidding') return prev
+    if (action.by !== prev.turnId) return prev
     const min = minMpBid(prev)
     const bid = Math.floor(action.amount)
     if (!Number.isFinite(bid) || bid < min || bid > prev.teams[action.by].budget) return prev
@@ -206,55 +194,58 @@ export function reduceMp(prev: MpState, action: MpAction): MpState {
     state.currentBid = bid
     state.highBidderId = action.by
     state.turnId = other(action.by)
-    state.endsAt = Date.now() + BID_EXTENSION_SECONDS * 1000
+    state.endsAt = Date.now() + TURN_SECONDS * 1000
     pushLog(state, 'bid', `${state.teams[action.by].name} bids $${bid}M for ${state.revealed.name}.`)
     return state
+  }
+
+  if (action.type === 'pass') {
+    if (prev.phase !== 'bidding') return prev
+    if (action.by !== prev.turnId) return prev
+    const state = clone(prev)
+    const passer = action.by
+    const winner = other(action.by)
+
+    if (state.highBidderId === null) {
+      // Nobody bid yet — passer takes the hidden, opponent gets revealed for $1.
+      const hidden = hiddenCost(state, passer)
+      state.result = {
+        revealedWinnerId: winner,
+        revealedPrice: 1,
+        hiddenWinnerId: passer,
+        hiddenPrice: hidden,
+      }
+      state.phase = 'resolved'
+      pushLog(state, 'info', `${state.teams[passer].name} passes and takes the hidden player.`)
+      pushLog(state, 'win', `${state.teams[winner].name} gets ${state.revealed.name} for $1M.`)
+      return state
+    }
+
+    // Someone already bid — the high bidder wins the revealed, passer gets hidden.
+    return settle(state, state.highBidderId, passer)
   }
 
   if (action.type === 'timeout') {
     if (prev.phase !== 'bidding') return prev
     const state = clone(prev)
-    if (state.highBidderId) {
-      pushLog(state, 'info', 'Time! The hammer falls.')
-      return settle(state, state.highBidderId)
-    }
-    // Nobody bid: the manager with the smaller squad takes the revealed player
-    // for a token $1M so both squads stay complete.
-    const winner: PeerId =
-      state.teams.host.squad.length <= state.teams.guest.squad.length ? 'host' : 'guest'
-    state.currentBid = 1
-    pushLog(state, 'info', 'No bids — the player goes for a token fee.')
-    return settle(state, winner)
-  }
+    const passer = state.turnId
+    pushLog(state, 'info', `Time! ${state.teams[passer].name}'s turn expired.`)
 
-  if (action.type === 'concede') {
-    if (prev.phase !== 'bidding') return prev
-    const state = clone(prev)
-    const loser = action.by
-    const winner = other(action.by)
-    // No bids yet: the opponent takes the revealed player at the base price.
-    const price = state.highBidderId === winner ? state.currentBid : 1
-    const affordable = Math.min(price, state.teams[winner].budget)
-    const hidden = hiddenCost(state, loser)
-
-    state.result = {
-      revealedWinnerId: winner,
-      revealedPrice: affordable,
-      hiddenWinnerId: loser,
-      hiddenPrice: hidden,
+    if (state.highBidderId === null) {
+      const winner = other(passer)
+      const hidden = hiddenCost(state, passer)
+      state.result = {
+        revealedWinnerId: winner,
+        revealedPrice: 1,
+        hiddenWinnerId: passer,
+        hiddenPrice: hidden,
+      }
+      state.phase = 'resolved'
+      pushLog(state, 'win', `${state.teams[winner].name} gets ${state.revealed.name} for $1M.`)
+      return state
     }
-    state.phase = 'resolved'
-    pushLog(
-      state,
-      'win',
-      `${state.teams[winner].name} signs ${state.revealed.name} for $${affordable}M.`,
-    )
-    pushLog(
-      state,
-      'hidden',
-      `${state.teams[loser].name} is compensated with the hidden player, ${state.hidden.name}, for $${hidden}M.`,
-    )
-    return state
+
+    return settle(state, state.highBidderId, passer)
   }
 
   if (action.type === 'next') {
@@ -292,13 +283,12 @@ export function reduceMp(prev: MpState, action: MpAction): MpState {
     state.highBidderId = null
     state.result = null
     state.phase = 'bidding'
-    state.endsAt = Date.now() + ROUND_SECONDS * 1000
-    // Alternate who opens each round for fairness.
+    state.endsAt = Date.now() + TURN_SECONDS * 1000
     state.turnId = state.round % 2 === 1 ? 'host' : 'guest'
     pushLog(
       state,
       'info',
-      `Round ${state.round}: ${revealed.name} (${revealed.position}) is up. Bidding opens at $0M.`,
+      `Round ${state.round}: ${revealed.name} (${revealed.position}) is up. ${state.teams[state.turnId].name} opens the bidding.`,
     )
     return state
   }

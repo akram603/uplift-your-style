@@ -6,9 +6,8 @@ import {
   type TeamSize,
 } from "@/lib/formations";
 import { PlayerAvatar } from "@/components/game/player-card";
-import { Wallet, AlertTriangle } from "lucide-react";
+import { Wallet, TriangleAlert as AlertTriangle } from "lucide-react";
 
-/** Assigns squad players to formation slots, preferring positional fit. */
 function assignToSlots(slots: FormationSlot[], squad: Player[]): (Player | null)[] {
   const filled: (Player | null)[] = slots.map(() => null);
   const remaining = [...squad];
@@ -31,7 +30,7 @@ function assignToSlots(slots: FormationSlot[], squad: Player[]): (Player | null)
 function SlotChip({ player, position }: { player: Player | null; position: string }) {
   if (!player) {
     return (
-      <div className="flex h-16 w-16 flex-col items-center justify-center rounded-full border border-dashed border-border/70 bg-background/40 text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:h-[4.5rem] sm:w-[4.5rem]">
+      <div className="flex h-16 w-16 flex-col items-center justify-center rounded-full border border-dashed border-border/50 bg-secondary/20 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60 sm:h-[4.5rem] sm:w-[4.5rem]">
         {position}
       </div>
     );
@@ -39,8 +38,12 @@ function SlotChip({ player, position }: { player: Player | null; position: strin
   return (
     <div className="flex flex-col items-center gap-1">
       <div className="relative">
-        <PlayerAvatar player={player} size="sm" className="h-16 w-16 rounded-full text-base sm:h-[4.5rem] sm:w-[4.5rem] sm:text-lg" />
-        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-primary px-1.5 py-px font-display text-[10px] font-bold leading-tight text-primary-foreground">
+        <PlayerAvatar
+          player={player}
+          size="sm"
+          className="h-16 w-16 rounded-full text-base sm:h-[4.5rem] sm:w-[4.5rem] sm:text-lg"
+        />
+        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-primary px-1.5 py-px font-display text-[10px] font-bold leading-tight text-primary-foreground shadow">
           {player.ovr}
         </span>
       </div>
@@ -78,7 +81,7 @@ export function SquadDashboard({
   const spent = startingBudget - budget;
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4">
+    <div className="glass rounded-2xl p-4">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="font-display text-lg font-semibold">{name}</h2>
@@ -111,19 +114,19 @@ export function SquadDashboard({
         </div>
       )}
 
-      <div className="mb-4 h-2 overflow-hidden rounded-full bg-secondary" aria-hidden="true">
+      <div className="mb-4 h-2 overflow-hidden rounded-full bg-secondary/60" aria-hidden="true">
         <div
-          className="h-full rounded-full bg-money transition-all"
+          className="h-full rounded-full bg-gradient-to-r from-money/70 to-money transition-all duration-500"
           style={{ width: `${Math.min(100, Math.max(0, (budget / startingBudget) * 100))}%` }}
         />
       </div>
 
       <div
-        className="relative flex flex-col justify-between gap-4 rounded-xl border border-primary/15 bg-[radial-gradient(circle_at_center,color-mix(in_oklch,var(--primary)_12%,transparent),transparent_70%)] p-4 py-6"
+        className="relative flex flex-col justify-between gap-4 rounded-xl border border-primary/10 bg-[radial-gradient(circle_at_center,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_70%)] p-4 py-6"
         style={{ minHeight: teamSize === 11 ? 420 : 300 }}
       >
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/20" />
-        <div className="pointer-events-none absolute left-4 right-4 top-1/2 h-px -translate-y-1/2 bg-primary/15" />
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/15" />
+        <div className="pointer-events-none absolute left-4 right-4 top-1/2 h-px -translate-y-1/2 bg-primary/10" />
         {[...rows].reverse().map((row) => {
           const rowSlotIdx = slots
             .map((s, i) => ({ s, i }))

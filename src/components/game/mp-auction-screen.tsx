@@ -4,10 +4,9 @@ import { cn } from "@/lib/utils";
 import { RevealedCard, HiddenCard, HiddenRevealedCard } from "@/components/game/player-card";
 import { SquadDashboard } from "@/components/game/squad-dashboard";
 import { hiddenCost, minMpBid, other, type MpAction, type MpState, type PeerId } from "@/lib/mp-game";
-import { Timer } from "lucide-react";
+import { Timer, ArrowRight, Flag, Gavel, Wifi, Crown } from "lucide-react";
 import { sfx } from "@/lib/sfx";
 import { useCountdown } from "@/hooks/use-countdown";
-import { ArrowRight, Flag, Gavel, Wifi } from "lucide-react";
 
 const LOG_DOT: Record<string, string> = {
   info: "bg-muted-foreground",
@@ -25,7 +24,6 @@ function MpAuctionScreenBase({
   state: MpState;
   meId: PeerId;
   onAction: (action: MpAction) => void;
-  /** Which managers can bid from this device (local play controls both). */
   controlledIds?: PeerId[];
 }) {
   const controlled = useMemo(() => controlledIds ?? [meId], [controlledIds, meId]);
@@ -33,8 +31,9 @@ function MpAuctionScreenBase({
   const rival = state.teams[other(meId)];
   const bidding = state.phase === "bidding";
   const min = useMemo(() => minMpBid(state), [state]);
+  const isMyTurn = bidding && controlled.includes(state.turnId);
+  const turnName = state.teams[state.turnId].name;
 
-  // Live countdown — rAF driven, one render per second, pauses when hidden.
   const left = useCountdown(state.endsAt, bidding);
 
   const firedRef = useRef(false);
@@ -51,10 +50,16 @@ function MpAuctionScreenBase({
   const result = state.result;
 
   const prevPhase = useRef(state.phase);
+  const prevTurn = useRef(state.turnId);
   useEffect(() => {
     if (prevPhase.current === "bidding" && state.phase === "resolved") sfx.win();
+    if (bidding && prevTurn.current !== state.turnId) {
+      if (controlled.includes(state.turnId)) sfx.bid();
+      else sfx.counter();
+    }
     prevPhase.current = state.phase;
-  }, [state.phase]);
+    prevTurn.current = state.turnId;
+  }, [state.phase, state.turnId, bidding, controlled]);
 
   const raise = useCallback(
     (by: PeerId, amount: number) => {
@@ -63,91 +68,185 @@ function MpAuctionScreenBase({
     },
     [onAction],
   );
-  const concede = useCallback(
+  const pass = useCallback(
     (by: PeerId) => {
       sfx.hidden();
-      onAction({ type: "concede", by });
+      onAction({ type: "pass", by });
     },
     [onAction],
   );
 
+  const timerPct = Math.min(100, (left / 15) * 100);
+  const timerUrgent = left <= 5;
+
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4">
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Round {state.round} of {state.totalRounds}
-            </span>
-            <div className="font-display text-lg font-semibold">Bidding opens at $0M</div>
-          </div>
-          <div className="text-right">
-            <span className="text-xs text-muted-foreground">Current high bid</span>
-            <div
-              className={cn(
-                "font-mono text-xl font-bold",
-                state.highBidderId === meId ? "text-primary" : "text-foreground",
-              )}
-            >
-              {state.highBidderId ? `$${state.currentBid}M` : "—"}
+        {/* Round + timer header */}
+        <div className="glass rounded-2xl p-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Round {state.round} of {state.totalRounds}
+              </span>
+              <div className="font-display text-lg font-semibold">
+                {bidding ? "Turn-based auction" : "Round resolved"}
+              </div>
             </div>
-            <span className="text-[11px] text-muted-foreground">
-              {bidding ? `Open bidding vs ${rival.name}` : "Round resolved"}
-            </span>
+            {bidding && (
+              <div className="flex items-center gap-4">
+                <div className="relative flex h-14 w-14 items-center justify-center">
+                  <svg className="absolute inset-0 -rotate-90" viewBox="0 0 56 56">
+                    <circle
+                      cx="28"
+                      cy="28"
+                      r="24"
+                      fill="none"
+                      strokeWidth="3"
+                      className="stroke-secondary/40"
+                    />
+                    <circle
+                      cx="28"
+                      cy="28"
+                      r="24"
+                      fill="none"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      className={cn(
+                        "transition-all duration-300",
+                        timerUrgent ? "stroke-destructive" : "stroke-primary",
+                      )}
+                      strokeDasharray={150.8}
+                      strokeDashoffset={150.8 - (150.8 * timerPct) / 100}
+                    />
+                  </svg>
+                  <span
+                    className={cn(
+                      "font-mono text-lg font-bold",
+                      timerUrgent ? "text-destructive" : "text-foreground",
+                    )}
+                  >
+                    {left}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs text-muted-foreground">Current turn</span>
+                  <div
+                    className={cn(
+                      "font-display text-base font-bold",
+                      isMyTurn ? "text-gold-gradient" : "text-foreground",
+                    )}
+                  >
+                    {isMyTurn ? "Your turn" : turnName}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
+        {/* Bid info bar */}
+        <div className="glass rounded-2xl p-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                High bid
+              </span>
+              <div
+                className={cn(
+                  "font-mono text-2xl font-bold",
+                  state.highBidderId === meId ? "text-primary" : "text-foreground",
+                )}
+              >
+                {state.highBidderId ? `$${state.currentBid}M` : "—"}
+              </div>
+              {state.highBidderId && (
+                <span className="text-[11px] text-muted-foreground">
+                  {state.highBidderId === meId ? "You lead" : `${state.teams[state.highBidderId].name} leads`}
+                </span>
+              )}
+            </div>
+            <div className="text-right">
+              <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                Min bid
+              </span>
+              <div className="font-mono text-2xl font-bold text-money">${min}M</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Player cards */}
         <div className="grid gap-4 sm:grid-cols-2">
           <RevealedCard player={state.revealed} />
           {bidding ? (
-            <HiddenCard hint="Whoever drops out of this race receives the hidden player." />
+            <HiddenCard hint="Whoever passes gets this player as compensation." />
           ) : (
             <HiddenRevealedCard player={state.hidden} />
           )}
         </div>
 
+        {/* Action area */}
         {bidding ? (
-          <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                Free bidding — any amount, any time
-              </span>
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-sm font-bold",
-                  left <= 5 ? "bg-destructive/15 text-destructive" : "bg-primary/10 text-primary",
-                )}
-              >
-                <Timer className="h-3.5 w-3.5" /> {left}s
-              </span>
-            </div>
+          <div className="glass-strong rounded-2xl p-5">
             {controlled.map((id) => (
-              <BidRow
+              <TurnActions
                 key={id}
                 label={state.teams[id].name}
+                isYou={id === meId}
+                active={state.turnId === id}
                 budget={state.teams[id].budget}
                 min={min}
-                leading={state.highBidderId === id}
                 onBid={(amount) => raise(id, amount)}
-                onConcede={() => concede(id)}
+                onPass={() => pass(id)}
                 hiddenCost={hiddenCost(state, id)}
               />
             ))}
+            {!isMyTurn && controlled.length === 1 && (
+              <p className="mt-3 text-center text-sm text-muted-foreground animate-pulse-soft">
+                Waiting for {turnName} to make their move…
+              </p>
+            )}
           </div>
         ) : state.phase === "resolved" && result ? (
-          <div className="animate-pop rounded-2xl border border-border bg-card p-4">
-            <ul className="mb-3 space-y-1.5 text-sm">
-              <li className={result.revealedWinnerId === meId ? "text-foreground" : "text-muted-foreground"}>
-                {state.teams[result.revealedWinnerId ?? "host"].name} signed {state.revealed.name} for $
-                {result.revealedPrice}M
+          <div className="glass-strong animate-pop rounded-2xl p-5">
+            <ul className="mb-4 space-y-2 text-sm">
+              <li
+                className={cn(
+                  "flex items-center gap-2 rounded-lg px-3 py-2",
+                  result.revealedWinnerId === meId ? "bg-primary/10" : "bg-secondary/30",
+                )}
+              >
+                <Crown
+                  className={cn(
+                    "h-4 w-4 shrink-0",
+                    result.revealedWinnerId === meId ? "text-primary" : "text-muted-foreground",
+                  )}
+                />
+                <span className={result.revealedWinnerId === meId ? "text-foreground" : "text-muted-foreground"}>
+                  {state.teams[result.revealedWinnerId ?? "host"].name} signed {state.revealed.name} for $
+                  {result.revealedPrice}M
+                </span>
               </li>
-              <li className={result.hiddenWinnerId === meId ? "text-foreground" : "text-muted-foreground"}>
-                {state.teams[result.hiddenWinnerId ?? "guest"].name} received the hidden {state.hidden.name}{" "}
-                for ${result.hiddenPrice}M
+              <li
+                className={cn(
+                  "flex items-center gap-2 rounded-lg px-3 py-2",
+                  result.hiddenWinnerId === meId ? "bg-money/10" : "bg-secondary/30",
+                )}
+              >
+                <Flag
+                  className={cn(
+                    "h-4 w-4 shrink-0",
+                    result.hiddenWinnerId === meId ? "text-money" : "text-muted-foreground",
+                  )}
+                />
+                <span className={result.hiddenWinnerId === meId ? "text-foreground" : "text-muted-foreground"}>
+                  {state.teams[result.hiddenWinnerId ?? "guest"].name} received the hidden{" "}
+                  {state.hidden.name} for ${result.hiddenPrice}M
+                </span>
               </li>
             </ul>
             <Button
-              className="h-11 w-full text-base"
+              className="h-12 w-full text-base"
               onClick={() => onAction({ type: "next", by: meId })}
             >
               {state.round >= state.totalRounds ? "Finish Draft" : "Next Round"}
@@ -157,25 +256,31 @@ function MpAuctionScreenBase({
         ) : null}
       </div>
 
+      {/* Sidebar */}
       <aside className="space-y-4">
-        <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="glass rounded-2xl p-4">
           <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             <Wifi className="h-3.5 w-3.5" /> Managers
           </h3>
           <ul className="space-y-2">
             {(["host", "guest"] as PeerId[]).map((id) => {
               const t = state.teams[id];
+              const isActive = state.turnId === id && state.phase === "bidding";
               return (
                 <li
                   key={id}
                   className={cn(
-                    "flex items-center justify-between rounded-lg px-2.5 py-1.5 text-sm",
-                    state.turnId === id && state.phase === "bidding"
-                      ? "bg-primary/10"
-                      : "bg-background/40",
+                    "flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-all",
+                    isActive ? "glass-gold animate-turn-flash" : "bg-secondary/20",
                   )}
                 >
                   <span className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        "h-2 w-2 rounded-full",
+                        isActive ? "bg-primary animate-pulse-soft" : "bg-muted-foreground/40",
+                      )}
+                    />
                     <span className={cn("font-medium", id === meId && "text-primary")}>
                       {t.name}
                       {id === meId ? " (you)" : ""}
@@ -197,7 +302,7 @@ function MpAuctionScreenBase({
           formationId={state.formationId}
         />
 
-        <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="glass rounded-2xl p-4">
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             Auction Feed
           </h3>
@@ -215,25 +320,25 @@ function MpAuctionScreenBase({
   );
 }
 
-/** Auction view; memoised so peer/timer updates don't re-render the tree twice. */
 export const MpAuctionScreen = memo(MpAuctionScreenBase);
 
-/** Free-form bid entry for one manager: any amount above the current bid. */
-const BidRow = memo(function BidRow({
+const TurnActions = memo(function TurnActions({
   label,
+  isYou,
+  active,
   budget,
   min,
-  leading,
   onBid,
-  onConcede,
+  onPass,
   hiddenCost,
 }: {
   label: string;
+  isYou: boolean;
+  active: boolean;
   budget: number;
   min: number;
-  leading: boolean;
   onBid: (amount: number) => void;
-  onConcede: () => void;
+  onPass: () => void;
   hiddenCost: number;
 }) {
   const [value, setValue] = useState("");
@@ -242,16 +347,24 @@ const BidRow = memo(function BidRow({
   let error: string | null = null;
   if (value.trim() !== "") {
     if (!Number.isFinite(parsed)) error = "Enter a number";
-    else if (parsed < min) error = `Must beat $${min - 1}M`;
+    else if (parsed < min) error = `Must bid at least $${min}M`;
     else if (parsed > budget) error = `Over budget ($${budget}M left)`;
   }
 
   return (
-    <div className="rounded-xl border border-border bg-background/40 p-3">
+    <div
+      className={cn(
+        "rounded-xl border p-4 transition-all",
+        active
+          ? "border-primary/40 glass-gold glow-soft"
+          : "border-border bg-secondary/20 opacity-50",
+      )}
+    >
       <div className="mb-2 flex items-center justify-between text-xs">
-        <span className={cn("font-semibold", leading && "text-primary")}>
+        <span className={cn("font-semibold", active ? "text-gold-gradient" : "text-muted-foreground")}>
           {label}
-          {leading ? " · leading" : ""}
+          {isYou ? " (you)" : ""}
+          {active ? " · your turn" : ""}
         </span>
         <span className="font-mono text-money">${budget}M</span>
       </div>
@@ -263,24 +376,27 @@ const BidRow = memo(function BidRow({
           <input
             type="number"
             inputMode="numeric"
-            placeholder="Type any amount"
+            placeholder={`Bid at least $${min}M`}
             value={value}
+            disabled={!active}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && valid) {
+              if (e.key === "Enter" && valid && active) {
                 onBid(parsed);
                 setValue("");
               }
             }}
             className={cn(
-              "h-12 w-full rounded-xl border bg-background pl-7 pr-3 font-mono text-lg font-semibold outline-none focus:border-primary",
+              "h-12 w-full rounded-xl border bg-background/60 pl-7 pr-3 font-mono text-lg font-semibold outline-none transition-colors",
+              "focus:border-primary focus:ring-2 focus:ring-primary/20",
               error ? "border-destructive" : "border-border",
+              !active && "cursor-not-allowed",
             )}
           />
         </div>
         <Button
           className="h-12"
-          disabled={!valid}
+          disabled={!active || !valid}
           onClick={() => {
             onBid(parsed);
             setValue("");
@@ -288,12 +404,17 @@ const BidRow = memo(function BidRow({
         >
           <Gavel className="h-4 w-4" /> Bid
         </Button>
-        <Button variant="secondary" className="h-12" onClick={onConcede}>
-          <Flag className="h-4 w-4" /> Drop (~${hiddenCost}M)
+        <Button
+          variant="secondary"
+          className="h-12"
+          disabled={!active}
+          onClick={onPass}
+        >
+          <Flag className="h-4 w-4" /> Pass
         </Button>
       </div>
-      <p className={cn("mt-1 text-[11px]", error ? "text-destructive" : "text-muted-foreground")}>
-        {error ?? `Bidding starts at $0M — enter at least $${min}M`}
+      <p className={cn("mt-1.5 text-[11px]", error ? "text-destructive" : "text-muted-foreground")}>
+        {error ?? `Pass to take the hidden player for ~$${hiddenCost}M`}
       </p>
     </div>
   );

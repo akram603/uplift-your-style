@@ -14,7 +14,6 @@ const ERA_LABEL: Record<Player["era"], string> = {
   women: "Women's",
 };
 
-/** Deterministic hue from a player id — same player, same colours. */
 function hashHue(id: string): number {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 360;
@@ -37,7 +36,6 @@ const SIZE_CLASS = {
   lg: "h-24 w-24 rounded-2xl text-3xl",
 } as const;
 
-/** Generated gradient avatar (initials) — no image assets needed. */
 export function PlayerAvatar({
   player,
   size = "md",
@@ -52,16 +50,16 @@ export function PlayerAvatar({
     <div
       aria-hidden="true"
       className={cn(
-        "relative flex shrink-0 items-center justify-center border border-white/15 font-display font-bold text-white shadow-md",
+        "relative flex shrink-0 items-center justify-center border border-white/10 font-display font-bold text-white shadow-lg",
         SIZE_CLASS[size],
         className,
       )}
       style={{
-        background: `linear-gradient(135deg, hsl(${hue} 55% 38%) 0%, hsl(${(hue + 45) % 360} 60% 26%) 100%)`,
+        background: `linear-gradient(135deg, hsl(${hue} 40% 30%) 0%, hsl(${(hue + 40) % 360} 45% 20%) 100%)`,
       }}
     >
       {initialsOf(player.name)}
-      <span className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.25),transparent_55%)]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.2),transparent_55%)]" />
     </div>
   );
 }
@@ -72,8 +70,11 @@ function StatBar({ label, value }: { label: string; value: number }) {
       <span className="w-8 shrink-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         {label}
       </span>
-      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
-        <div className="h-full rounded-full bg-primary" style={{ width: `${value}%` }} />
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary/60">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-primary/80 to-primary transition-all duration-500"
+          style={{ width: `${value}%` }}
+        />
       </div>
       <span className="w-6 shrink-0 text-right font-mono text-xs text-foreground">{value}</span>
     </div>
@@ -82,12 +83,12 @@ function StatBar({ label, value }: { label: string; value: number }) {
 
 export function RevealedCard({ player }: { player: Player }) {
   return (
-    <div className="animate-card-in relative overflow-hidden rounded-2xl border border-primary/40 bg-card p-5 shadow-lg shadow-primary/5">
-      <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-primary/10 blur-2xl" />
+    <div className="glass-strong animate-card-in relative overflow-hidden rounded-2xl p-5 shadow-xl">
+      <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary/10 blur-3xl" />
       <div className="mb-4 flex items-center gap-3">
         <div className="relative shrink-0">
           <PlayerAvatar player={player} size="md" />
-          <span className="absolute -bottom-1.5 left-1/2 flex -translate-x-1/2 items-center gap-0.5 rounded-full bg-primary px-2 py-0.5 font-display text-xs font-bold leading-none text-primary-foreground shadow">
+          <span className="absolute -bottom-1.5 left-1/2 flex -translate-x-1/2 items-center gap-0.5 rounded-full bg-primary px-2 py-0.5 font-display text-xs font-bold leading-none text-primary-foreground shadow-md">
             {player.ovr}
           </span>
         </div>
@@ -96,7 +97,7 @@ export function RevealedCard({ player }: { player: Player }) {
             <span className="inline-block rounded-md bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-primary">
               Revealed
             </span>
-            <span className="inline-block rounded-md bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            <span className="inline-block rounded-md bg-secondary/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
               {ERA_LABEL[player.era]}
             </span>
           </div>
@@ -143,12 +144,12 @@ export function RevealedCard({ player }: { player: Player }) {
 
 export function HiddenCard({ hint }: { hint?: string }) {
   return (
-    <div className="animate-card-in relative flex flex-col overflow-hidden rounded-2xl border border-dashed border-money/40 bg-card/60 p-5">
+    <div className="glass animate-card-in relative flex flex-col overflow-hidden rounded-2xl p-5">
       <span className="inline-block w-fit rounded-md bg-money/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-money">
         Hidden
       </span>
       <div className="flex flex-1 flex-col items-center justify-center gap-3 py-6 text-center">
-        <div className="animate-pulse-soft relative flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-money/40 bg-secondary font-display text-4xl text-money/60">
+        <div className="animate-pulse-soft relative flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-money/40 bg-secondary/40 font-display text-4xl text-money/60">
           ?
           <span className="pointer-events-none absolute inset-0 rounded-full bg-money/10 blur-md" />
         </div>
@@ -156,7 +157,7 @@ export function HiddenCard({ hint }: { hint?: string }) {
           <p className="font-display text-lg font-semibold">Mystery Player</p>
           <p className="max-w-[16rem] text-xs text-muted-foreground text-pretty">
             {hint ??
-              "Revealed after the bidding ends. Whoever misses out on the revealed player is compensated with them."}
+              "Revealed after the round ends. Whoever passes gets this player as compensation."}
           </p>
         </div>
       </div>
@@ -166,8 +167,8 @@ export function HiddenCard({ hint }: { hint?: string }) {
 
 export function HiddenRevealedCard({ player }: { player: Player }) {
   return (
-    <div className="animate-pop relative overflow-hidden rounded-2xl border border-money/40 bg-card p-5">
-      <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-money/10 blur-2xl" />
+    <div className="glass-gold animate-pop relative overflow-hidden rounded-2xl p-5 shadow-xl">
+      <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-money/15 blur-3xl" />
       <div className="mb-3 flex items-center gap-3">
         <PlayerAvatar player={player} size="md" />
         <div className="min-w-0">

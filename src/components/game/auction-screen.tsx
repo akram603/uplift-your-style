@@ -5,7 +5,7 @@ import { RevealedCard, HiddenCard, HiddenRevealedCard } from "@/components/game/
 import { Button } from "@/components/ui/button";
 import { sfx } from "@/lib/sfx";
 import { cn } from "@/lib/utils";
-import { Gavel, Eye, Sparkles, ArrowRight, CheckCircle2, Plus, Landmark, AlertTriangle, Brain } from "lucide-react";
+import { Gavel, Eye, Sparkles, ArrowRight, CircleCheck as CheckCircle2, Plus, Landmark, TriangleAlert as AlertTriangle, Brain } from "lucide-react";
 
 const LOG_DOT: Record<string, string> = {
   info: "bg-muted-foreground",
@@ -52,7 +52,6 @@ export function AuctionScreen({
     setBidInput(String(min));
   }, [min]);
 
-  // Play resolution sounds when the auction flips to resolved.
   const prevPhase = useRef(state.phase);
   useEffect(() => {
     if (prevPhase.current === "bidding" && state.phase === "resolved") {
@@ -94,61 +93,65 @@ export function AuctionScreen({
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4">
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Round {state.round} of {totalRounds}
-            </span>
-            <div className="font-display text-lg font-semibold">
-              Bidding opens at $0M — type any amount
-            </div>
-          </div>
-          <div className="text-right">
-            <span className="text-xs text-muted-foreground">Current high bid</span>
-            <div
-              className={cn(
-                "font-mono text-xl font-bold",
-                leadingIsHuman ? "text-primary" : "text-foreground",
-              )}
-            >
-              {state.highBidderId ? `$${state.currentBid}M` : "—"}
-            </div>
-            {highBidderName && (
-              <span className="text-[11px] text-muted-foreground">
-                {leadingIsHuman ? "You lead" : `${highBidderName} leads`}
+        <div className="glass rounded-2xl p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Round {state.round} of {totalRounds}
               </span>
-            )}
+              <div className="font-display text-lg font-semibold">
+                Bidding opens at $0M — type any amount
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-xs text-muted-foreground">Current high bid</span>
+              <div
+                className={cn(
+                  "font-mono text-xl font-bold",
+                  leadingIsHuman ? "text-primary" : "text-foreground",
+                )}
+              >
+                {state.highBidderId ? `$${state.currentBid}M` : "—"}
+              </div>
+              {highBidderName && (
+                <span className="text-[11px] text-muted-foreground">
+                  {leadingIsHuman ? "You lead" : `${highBidderName} leads`}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-3">
-          <div>
-            <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
-              Available cash
-            </span>
-            <div className="font-mono text-lg font-bold text-money">${human.budget}M</div>
-          </div>
-          <div>
-            <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
-              Current Debt
-            </span>
-            <div
-              className={cn(
-                "font-mono text-lg font-bold",
-                human.debt > 0 ? "text-destructive" : "text-muted-foreground",
-              )}
-            >
-              ${human.debt}M
+        <div className="glass rounded-2xl p-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                Available cash
+              </span>
+              <div className="font-mono text-lg font-bold text-money">${human.budget}M</div>
             </div>
-          </div>
-          <div>
-            <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
-              Loan headroom
-            </span>
-            <div className="font-mono text-lg font-bold">${headroom}M</div>
-            <span className="text-[10px] text-muted-foreground">
-              of ${MAX_LOAN}M max · {Math.round(LOAN_INTEREST * 100)}% interest
-            </span>
+            <div>
+              <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                Current Debt
+              </span>
+              <div
+                className={cn(
+                  "font-mono text-lg font-bold",
+                  human.debt > 0 ? "text-destructive" : "text-muted-foreground",
+                )}
+              >
+                ${human.debt}M
+              </div>
+            </div>
+            <div>
+              <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                Loan headroom
+              </span>
+              <div className="font-mono text-lg font-bold">${headroom}M</div>
+              <span className="text-[10px] text-muted-foreground">
+                of ${MAX_LOAN}M max · {Math.round(LOAN_INTEREST * 100)}% interest
+              </span>
+            </div>
           </div>
         </div>
 
@@ -162,7 +165,7 @@ export function AuctionScreen({
         </div>
 
         {state.phase === "bidding" ? (
-          <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="glass-strong rounded-2xl p-4">
             <label
               htmlFor="bid-amount"
               className="mb-2 block text-xs font-semibold uppercase tracking-widest text-muted-foreground"
@@ -187,8 +190,8 @@ export function AuctionScreen({
                     if (e.key === "Enter") submitBid();
                   }}
                   className={cn(
-                    "h-12 w-full rounded-xl border bg-background pl-7 pr-16 font-mono text-lg font-semibold text-foreground outline-none transition-colors",
-                    "focus:border-primary focus:ring-2 focus:ring-primary/30",
+                    "h-12 w-full rounded-xl border bg-background/60 pl-7 pr-16 font-mono text-lg font-semibold text-foreground outline-none transition-colors",
+                    "focus:border-primary focus:ring-2 focus:ring-primary/20",
                     bidError ? "border-destructive" : "border-border",
                     !canAffordMin && "cursor-not-allowed opacity-50",
                   )}
@@ -221,7 +224,7 @@ export function AuctionScreen({
             </p>
 
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <Button className="h-12 text-base" disabled={!bidValid} onClick={submitBid}>
+              <Button className="h-12 text-base glow-gold" disabled={!bidValid} onClick={submitBid}>
                 <Gavel className="h-4 w-4" />
                 {canAffordMin ? "Place Bid" : "Budget too low"}
               </Button>
@@ -272,7 +275,7 @@ export function AuctionScreen({
             </div>
           </div>
         ) : (
-          <div className="animate-pop rounded-2xl border border-border bg-card p-4">
+          <div className="glass-strong animate-pop rounded-2xl p-4">
             <div className="mb-3 space-y-1.5 text-sm">
               <ResultLine
                 ok={humanWonRevealed}
@@ -292,21 +295,21 @@ export function AuctionScreen({
               />
             </div>
             {state.aiBluffed && (
-              <p className="mb-3 flex items-start gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-xs text-primary">
+              <p className="mb-3 flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-primary">
                 <Brain className="mt-0.5 h-4 w-4 shrink-0" />
                 Mind games! An opponent deliberately walked away from the revealed player to grab
                 the hidden one — they know your squad is getting stronger.
               </p>
             )}
             {state.humanTookHidden && (
-              <p className="mb-3 flex items-start gap-2 rounded-lg border border-money/40 bg-money/10 px-3 py-2 text-xs text-money">
+              <p className="mb-3 flex items-start gap-2 rounded-lg border border-money/30 bg-money/10 px-3 py-2 text-xs text-money">
                 <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
                 You gambled on the mystery player. Risky… but sometimes the best XI is built on
                 instincts.
               </p>
             )}
             <Button
-              className="h-11 w-full text-base"
+              className="h-11 w-full text-base glow-gold"
               onClick={() => {
                 sfx.click();
                 onNextRound();
@@ -320,7 +323,7 @@ export function AuctionScreen({
       </div>
 
       <aside className="space-y-4">
-        <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="glass rounded-2xl p-4">
           <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             <Eye className="h-3.5 w-3.5" /> Managers
           </h3>
@@ -329,10 +332,10 @@ export function AuctionScreen({
               <li
                 key={t.id}
                 className={cn(
-                  "flex items-center justify-between rounded-lg px-2.5 py-1.5 text-sm",
+                  "flex items-center justify-between rounded-lg px-2.5 py-1.5 text-sm transition-all",
                   t.id === state.highBidderId
-                    ? "animate-pulse-soft bg-primary/10"
-                    : "bg-background/40",
+                    ? "glass-gold animate-pulse-soft"
+                    : "bg-secondary/20",
                 )}
               >
                 <span className="flex items-center gap-2">
@@ -354,16 +357,14 @@ export function AuctionScreen({
           </ul>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="glass rounded-2xl p-4">
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             Auction Feed
           </h3>
           <ul className="max-h-64 space-y-2 overflow-y-auto pr-1 [contain:content] overscroll-contain [-webkit-overflow-scrolling:touch]">
             {state.log.map((entry) => (
               <li key={entry.id} className="flex gap-2 text-xs leading-relaxed">
-                <span
-                  className={cn("mt-1 h-1.5 w-1.5 shrink-0 rounded-full", LOG_DOT[entry.kind])}
-                />
+                <span className={cn("mt-1 h-1.5 w-1.5 shrink-0 rounded-full", LOG_DOT[entry.kind])} />
                 <span className="text-muted-foreground">{entry.text}</span>
               </li>
             ))}

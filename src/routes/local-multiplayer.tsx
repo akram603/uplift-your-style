@@ -83,7 +83,7 @@ function LocalMultiplayer() {
             whose move it is. No internet, no AI.
           </p>
 
-          <div className="mt-6 grid gap-4 rounded-2xl border border-border bg-card p-4 sm:grid-cols-2">
+          <div className="mt-6 grid gap-4 glass rounded-2xl p-4 sm:grid-cols-2">
             {(["host", "guest"] as PeerId[]).map((id, i) => (
               <div key={id}>
                 <label
@@ -97,13 +97,13 @@ function LocalMultiplayer() {
                   value={names[id]}
                   maxLength={18}
                   onChange={(e) => setNames((n) => ({ ...n, [id]: e.target.value }))}
-                  className="h-12 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                  className="h-12 w-full rounded-xl border border-border bg-background/60 px-3 text-sm outline-none focus:border-primary"
                 />
               </div>
             ))}
           </div>
 
-          <div className="mt-6 rounded-2xl border border-border bg-card/40 p-5">
+          <div className="mt-6 glass rounded-2xl p-5">
             <h2 className="mb-4 font-display text-lg font-semibold">Draft settings</h2>
             <SetupScreen onStart={start} showOpponents={false} ctaLabel="Start Draft" />
           </div>
@@ -114,7 +114,7 @@ function LocalMultiplayer() {
         <>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <h1 className="font-display text-2xl font-bold">Local Head-to-Head</h1>
-            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+            <span className="inline-flex items-center gap-2 rounded-full glass-gold px-3 py-1 text-xs font-semibold text-primary">
               <Users className="h-3.5 w-3.5" /> {state.teams[active].name}&apos;s device
             </span>
           </div>
@@ -170,7 +170,7 @@ function LocalGameOver({
   return (
     <div className="animate-pop">
       <header className="mb-6 text-center">
-        <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
+        <span className="inline-flex items-center gap-2 rounded-full glass-gold px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
           <Trophy className="h-3.5 w-3.5" /> Draft Complete
         </span>
         <h1 className="mt-3 font-display text-3xl font-bold sm:text-4xl">{verdict}</h1>
@@ -196,7 +196,7 @@ function LocalGameOver({
         />
       </div>
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        <Button className="h-12 w-full text-base sm:col-span-2" onClick={onSimulate}>
+        <Button className="h-12 w-full text-base sm:col-span-2 glow-gold" onClick={onSimulate}>
           <PlayCircle className="h-4 w-4" /> Start Match Simulation
         </Button>
         <Button variant="secondary" className="h-12 w-full text-base" onClick={onRematch}>

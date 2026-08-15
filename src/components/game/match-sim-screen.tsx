@@ -6,7 +6,6 @@ import type { MatchSim } from "@/lib/mp-match";
 import type { PeerId } from "@/lib/mp-game";
 import { FastForward, RotateCcw, Trophy } from "lucide-react";
 
-/** Live text commentary of a simulated head-to-head, plus the leaderboard. */
 export const MatchSimScreen = memo(MatchSimScreenBase);
 
 function MatchSimScreenBase({
@@ -24,8 +23,6 @@ function MatchSimScreenBase({
 }) {
   const [clock, setClock] = useState(0);
 
-  // rAF clock: advances on the display refresh instead of a fixed interval, so
-  // playback stays smooth (and correctly paced) on slow or throttled devices.
   useEffect(() => {
     setClock(0);
     let raf = 0;
@@ -50,10 +47,7 @@ function MatchSimScreenBase({
     [sim, clock],
   );
   const goalsSoFar = useMemo(() => shown.filter((e) => e.kind === "goal"), [shown]);
-  const hostGoals = useMemo(
-    () => goalsSoFar.filter((e) => e.side === "host").length,
-    [goalsSoFar],
-  );
+  const hostGoals = useMemo(() => goalsSoFar.filter((e) => e.side === "host").length, [goalsSoFar]);
   const guestGoals = goalsSoFar.length - hostGoals;
   const done = clock >= 90;
   const feed = useMemo(() => [...shown].reverse(), [shown]);
@@ -69,18 +63,18 @@ function MatchSimScreenBase({
 
   return (
     <div className="animate-pop space-y-4">
-      <div className="rounded-2xl border border-primary/30 bg-card p-5 text-center">
+      <div className="glass-strong rounded-2xl p-6 text-center">
         <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           {done ? "Full time" : `${clock}'`}
         </span>
-        <div className="mt-2 flex items-center justify-center gap-4 font-display text-2xl font-bold sm:text-3xl">
+        <div className="mt-3 flex items-center justify-center gap-4 font-display text-2xl font-bold sm:text-3xl">
           <span className="flex-1 text-right">{names.host}</span>
-          <span className="rounded-xl border border-primary/40 bg-primary/10 px-4 py-1 font-mono text-primary">
+          <span className="rounded-xl border border-primary/30 bg-primary/10 px-5 py-1.5 font-mono text-primary glow-soft">
             {hostGoals} : {guestGoals}
           </span>
           <span className="flex-1 text-left">{names.guest}</span>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">
+        <p className="mt-3 text-xs text-muted-foreground">
           Squad rating {sim.hostRating} vs {sim.guestRating} · ATT {sim.hostAttack}/{sim.guestAttack}{" "}
           · DEF {sim.hostDefense}/{sim.guestDefense}
         </p>
@@ -91,7 +85,7 @@ function MatchSimScreenBase({
         )}
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="glass rounded-2xl p-4">
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Live commentary
         </h3>
@@ -118,7 +112,7 @@ function MatchSimScreenBase({
       </div>
 
       {done && (
-        <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="glass rounded-2xl p-4">
           <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             <Trophy className="h-3.5 w-3.5" /> Leaderboard
           </h3>
@@ -129,7 +123,7 @@ function MatchSimScreenBase({
               .map((id) => (
                 <li
                   key={id}
-                  className="flex items-center justify-between rounded-lg bg-background/40 px-3 py-2 text-sm"
+                  className="flex items-center justify-between rounded-lg bg-secondary/30 px-3 py-2 text-sm"
                 >
                   <span className="font-medium">{names[id]}</span>
                   <span className="font-mono font-semibold text-primary">{points[id]} pts</span>
@@ -137,7 +131,7 @@ function MatchSimScreenBase({
               ))}
           </ul>
           {canAdvance ? (
-            <Button className="mt-4 h-12 w-full text-base" onClick={onNextRound}>
+            <Button className="mt-4 h-12 w-full text-base glow-gold" onClick={onNextRound}>
               <RotateCcw className="h-4 w-4" /> Next Round — new draft
             </Button>
           ) : (

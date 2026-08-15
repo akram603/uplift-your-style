@@ -304,7 +304,7 @@ function OnlineMultiplayer() {
             link; the friend joins and both drafts stay in sync in real time. No AI takes part.
           </p>
 
-          <div className="mt-6 rounded-2xl border border-border bg-card p-4">
+          <div className="mt-6 glass rounded-2xl p-4">
             <label
               htmlFor="my-name"
               className="mb-1.5 block text-xs font-medium text-muted-foreground"
@@ -317,15 +317,15 @@ function OnlineMultiplayer() {
               maxLength={18}
               onChange={(e) => setMyName(e.target.value)}
               placeholder="e.g. Goalden FC"
-              className="h-12 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+              className="h-12 w-full rounded-xl border border-border bg-background/60 px-3 text-sm outline-none focus:border-primary"
             />
           </div>
 
           <div className="mt-4 grid gap-3">
-            <Button className="h-12 text-base" onClick={startHosting}>
+            <Button className="h-12 text-base glow-gold" onClick={startHosting}>
               <Wifi className="h-4 w-4" /> Host Game
             </Button>
-            <div className="rounded-2xl border border-border bg-card p-4">
+            <div className="glass rounded-2xl p-4">
               <label
                 htmlFor="room"
                 className="mb-1.5 block text-xs font-medium text-muted-foreground"
@@ -357,12 +357,12 @@ function OnlineMultiplayer() {
       {screen === "host" && (
         <div className="mx-auto max-w-2xl">
           <h1 className="font-display text-3xl font-bold">Room Ready</h1>
-          <div className="mt-4 rounded-2xl border border-border bg-card p-5">
+          <div className="mt-4 glass-strong rounded-2xl p-5">
             <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               Room ID
             </span>
             <div className="mt-1 flex flex-wrap items-center gap-3">
-              <span className="font-mono text-4xl font-bold tracking-[0.3em] text-primary">
+              <span className="font-mono text-4xl font-bold tracking-[0.3em] text-gold-gradient">
                 {room}
               </span>
               <Button
@@ -412,7 +412,7 @@ function OnlineMultiplayer() {
             {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
           </div>
 
-          <div className="mt-6 rounded-2xl border border-border bg-card/40 p-5">
+          <div className="mt-6 glass rounded-2xl p-5">
             <h2 className="mb-4 font-display text-lg font-semibold">Draft settings</h2>
             <SetupScreen
               onStart={hostStartGame}
@@ -470,7 +470,7 @@ function OnlineMultiplayer() {
           </div>
           <MpAuctionScreen state={state} meId={role} onAction={dispatch} />
           {disconnected && (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-destructive/40 bg-destructive/10 p-4">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-destructive/40 bg-destructive/10 glass p-4">
               <p className="flex items-center gap-2 text-sm text-destructive">
                 <Unplug className="h-4 w-4 shrink-0" />
                 The connection was lost. The draft can't continue — both players should head back
@@ -532,7 +532,7 @@ function MpGameOver({
   return (
     <div className="animate-pop">
       <header className="mb-6 text-center">
-        <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
+        <span className="inline-flex items-center gap-2 rounded-full glass-gold px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
           <Trophy className="h-3.5 w-3.5" /> Draft Complete
         </span>
         <h1 className="mt-3 font-display text-3xl font-bold sm:text-4xl">{verdict}</h1>
@@ -558,7 +558,7 @@ function MpGameOver({
         />
       </div>
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        <Button className="h-12 w-full text-base sm:col-span-2" onClick={onSimulate}>
+        <Button className="h-12 w-full text-base sm:col-span-2 glow-gold" onClick={onSimulate}>
           <PlayCircle className="h-4 w-4" /> Start Match Simulation
         </Button>
         {isHost ? (

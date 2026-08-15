@@ -45,7 +45,7 @@ function Menu() {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-12 sm:py-20">
       <header className="mb-10 text-center">
-        <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
+        <span className="inline-flex items-center gap-2 rounded-full glass-gold px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
           <Trophy className="h-3.5 w-3.5" /> Bid Banter Buddy
         </span>
         <h1 className="mt-4 font-display text-4xl font-bold tracking-tight text-balance sm:text-5xl">
@@ -57,7 +57,7 @@ function Menu() {
         </p>
         <button
           onClick={toggleMute}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-full glass px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
           aria-label={muted ? "Unmute sounds" : "Mute sounds"}
         >
           {muted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
@@ -68,7 +68,7 @@ function Menu() {
       <div className="grid gap-4 sm:grid-cols-2">
         <Link
           to="/single-player"
-          className="group rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/50"
+          className="group glass rounded-2xl p-6 transition-all hover:border-primary/40 hover:glow-soft"
         >
           <Gamepad2 className="h-7 w-7 text-primary" />
           <h2 className="mt-4 font-display text-xl font-semibold">Career</h2>
@@ -80,7 +80,7 @@ function Menu() {
 
         <Link
           to="/online-multiplayer"
-          className="group rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/50"
+          className="group glass rounded-2xl p-6 transition-all hover:border-primary/40 hover:glow-soft"
         >
           <Wifi className="h-7 w-7 text-money" />
           <h2 className="mt-4 font-display text-xl font-semibold">Online Multiplayer</h2>
@@ -92,7 +92,7 @@ function Menu() {
 
         <Link
           to="/local-multiplayer"
-          className="group rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/50 sm:col-span-2"
+          className="group glass rounded-2xl p-6 transition-all hover:border-primary/40 hover:glow-soft sm:col-span-2"
         >
           <Users className="h-7 w-7 text-primary" />
           <h2 className="mt-4 font-display text-xl font-semibold">Local Two-Player</h2>
@@ -102,7 +102,7 @@ function Menu() {
         </Link>
       </div>
 
-      <section className="mt-8 rounded-2xl border border-border bg-card p-5">
+      <section className="mt-8 glass rounded-2xl p-5">
         <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           <History className="h-3.5 w-3.5" /> Trophy Room
         </h2>
@@ -121,7 +121,7 @@ function Menu() {
               {history.slice(0, 4).map((h) => (
                 <li
                   key={h.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-background/40 px-3 py-2 text-sm"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-secondary/30 px-3 py-2 text-sm"
                 >
                   <span className="flex items-center gap-2">
                     {h.champion ? (
