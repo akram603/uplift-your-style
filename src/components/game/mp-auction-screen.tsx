@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { RevealedCard, HiddenCard, HiddenRevealedCard } from "@/components/game/player-card";
@@ -6,6 +6,7 @@ import { SquadDashboard } from "@/components/game/squad-dashboard";
 import { hiddenCost, minMpBid, other, type MpAction, type MpState, type PeerId } from "@/lib/mp-game";
 import { Timer } from "lucide-react";
 import { sfx } from "@/lib/sfx";
+import { useCountdown } from "@/hooks/use-countdown";
 import { ArrowRight, Flag, Gavel, Wifi } from "lucide-react";
 
 const LOG_DOT: Record<string, string> = {
@@ -15,7 +16,7 @@ const LOG_DOT: Record<string, string> = {
   hidden: "bg-money",
 };
 
-export function MpAuctionScreen({
+function MpAuctionScreenBase({
   state,
   meId,
   onAction,
@@ -27,21 +28,14 @@ export function MpAuctionScreen({
   /** Which managers can bid from this device (local play controls both). */
   controlledIds?: PeerId[];
 }) {
-  const controlled = controlledIds ?? [meId];
+  const controlled = useMemo(() => controlledIds ?? [meId], [controlledIds, meId]);
   const me = state.teams[meId];
   const rival = state.teams[other(meId)];
   const bidding = state.phase === "bidding";
-  const min = minMpBid(state);
+  const min = useMemo(() => minMpBid(state), [state]);
 
-  // Live countdown — anyone may type any amount until the hammer falls.
-  const [left, setLeft] = useState(() => Math.max(0, Math.ceil((state.endsAt - Date.now()) / 1000)));
-  useEffect(() => {
-    if (!bidding) return;
-    const tick = () => setLeft(Math.max(0, Math.ceil((state.endsAt - Date.now()) / 1000)));
-    tick();
-    const t = window.setInterval(tick, 250);
-    return () => window.clearInterval(t);
-  }, [state.endsAt, bidding, state.round]);
+  // Live countdown — rAF driven, one render per second, pauses when hidden.
+  const left = useCountdown(state.endsAt, bidding);
 
   const firedRef = useRef(false);
   useEffect(() => {
@@ -62,14 +56,20 @@ export function MpAuctionScreen({
     prevPhase.current = state.phase;
   }, [state.phase]);
 
-  const raise = (by: PeerId, amount: number) => {
-    sfx.bid();
-    onAction({ type: "raise", by, amount });
-  };
-  const concede = (by: PeerId) => {
-    sfx.hidden();
-    onAction({ type: "concede", by });
-  };
+  const raise = useCallback(
+    (by: PeerId, amount: number) => {
+      sfx.bid();
+      onAction({ type: "raise", by, amount });
+    },
+    [onAction],
+  );
+  const concede = useCallback(
+    (by: PeerId) => {
+      sfx.hidden();
+      onAction({ type: "concede", by });
+    },
+    [onAction],
+  );
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
