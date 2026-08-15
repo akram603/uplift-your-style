@@ -247,12 +247,14 @@ function OnlineMultiplayer() {
         if (next === current) return;
         commit(next, action.type === "raise" && next.phase === "bidding");
       } else {
-        // Client-side prediction: apply locally at once so the UI never waits
-        // on a round trip; the host's authoritative frame reconciles after.
-        const predicted = reduceMp(current, action);
-        if (predicted !== current) {
-          stateRef.current = predicted;
-          setState(predicted);
+        // Client-side prediction for the latency-sensitive action only: the
+        // raise lands instantly locally and the host's frame reconciles after.
+        if (action.type === "raise") {
+          const predicted = reduceMp(current, action);
+          if (predicted !== current) {
+            stateRef.current = predicted;
+            setState(predicted);
+          }
         }
         sessionRef.current?.send({ kind: "action", action });
       }
