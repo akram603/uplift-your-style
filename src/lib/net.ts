@@ -8,12 +8,16 @@
 // Browser-only: import this module lazily (inside an effect/handler).
 
 import type { DataConnection, Peer } from "peerjs";
-import type { MpAction, MpState } from "./mp-game";
+import type { MpAction } from "./mp-game";
+import type { BidPatch, WireState } from "./mp-wire";
 
 export type NetStatus = "idle" | "hosting" | "joining" | "connected" | "closed" | "error";
 
 export type NetMessage =
-  | { kind: "state"; state: MpState }
+  /** Full snapshot (pool stripped). `t` is the sender clock for skew correction. */
+  | { kind: "state"; state: WireState; t: number }
+  /** Tiny delta for the most frequent event (a raise). */
+  | { kind: "bid"; patch: BidPatch; t: number }
   | { kind: "action"; action: MpAction }
   | { kind: "hello"; name: string };
 

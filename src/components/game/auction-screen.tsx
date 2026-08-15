@@ -358,7 +358,7 @@ export function AuctionScreen({
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             Auction Feed
           </h3>
-          <ul className="max-h-64 space-y-2 overflow-y-auto pr-1">
+          <ul className="max-h-64 space-y-2 overflow-y-auto pr-1 [contain:content] overscroll-contain [-webkit-overflow-scrolling:touch]">
             {state.log.map((entry) => (
               <li key={entry.id} className="flex gap-2 text-xs leading-relaxed">
                 <span

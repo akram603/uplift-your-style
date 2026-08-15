@@ -14,6 +14,7 @@ import {
 } from "@/lib/mp-game";
 import { sfx } from "@/lib/sfx";
 import type { NetMessage, NetSession, NetStatus } from "@/lib/net";
+import { applyBidPatch, decodeState, encodeState, shiftClock, toBidPatch } from "@/lib/mp-wire";
 import {
   ArrowLeft,
   Check,
@@ -68,6 +69,21 @@ function OnlineMultiplayer() {
   const stateRef = useRef<MpState | null>(null);
   const roleRef = useRef<PeerId>("host");
   const lastSetupRef = useRef<SetupResult | null>(null);
+  /** Estimated host-minus-local clock skew (ms), for matching countdowns. */
+  const skewRef = useRef(0);
+
+  /** Applies + broadcasts as host, keeping the send path off the render path. */
+  const commit = useCallback((next: MpState, delta: boolean) => {
+    stateRef.current = next;
+    setState(next);
+    const session = sessionRef.current;
+    if (!session) return;
+    session.send(
+      delta
+        ? { kind: "bid", patch: toBidPatch(next), t: Date.now() }
+        : { kind: "state", state: encodeState(next), t: Date.now() },
+    );
+  }, []);
 
   useEffect(() => {
     stateRef.current = state;
@@ -105,8 +121,24 @@ function OnlineMultiplayer() {
 
   const handleMessage = useCallback((msg: NetMessage) => {
     if (msg.kind === "state") {
-      setState(msg.state);
+      skewRef.current = msg.t - Date.now();
+      const next = shiftClock(decodeState(msg.state), skewRef.current);
+      // Drop stale/out-of-order frames (never rewind the local simulation).
+      const current = stateRef.current;
+      if (current && next.rev < current.rev) return;
+      stateRef.current = next;
+      setState(next);
       setScreen("playing");
+      return;
+    }
+    if (msg.kind === "bid") {
+      skewRef.current = msg.t - Date.now();
+      const current = stateRef.current;
+      if (!current) return;
+      const next = applyBidPatch(current, shiftClock(msg.patch, skewRef.current));
+      if (next === current) return;
+      stateRef.current = next;
+      setState(next);
       return;
     }
     if (msg.kind === "hello") {
@@ -119,8 +151,14 @@ function OnlineMultiplayer() {
       const current = stateRef.current;
       if (!current) return;
       const next = reduceMp(current, msg.action);
+      if (next === current) return;
+      stateRef.current = next;
       setState(next);
-      sessionRef.current?.send({ kind: "state", state: next });
+      sessionRef.current?.send(
+        msg.action.type === "raise" && next.phase === "bidding"
+          ? { kind: "bid", patch: toBidPatch(next), t: Date.now() }
+          : { kind: "state", state: encodeState(next), t: Date.now() },
+      );
     }
   }, []);
 
@@ -177,7 +215,8 @@ function OnlineMultiplayer() {
       });
       setState(game);
       setScreen("playing");
-      sessionRef.current?.send({ kind: "state", state: game });
+      stateRef.current = game;
+      sessionRef.current?.send({ kind: "state", state: encodeState(game), t: Date.now() });
     },
     [myName, peerName],
   );
@@ -195,22 +234,32 @@ function OnlineMultiplayer() {
     });
     setState(game);
     setScreen("playing");
-    sessionRef.current?.send({ kind: "state", state: game });
+    stateRef.current = game;
+    sessionRef.current?.send({ kind: "state", state: encodeState(game), t: Date.now() });
   }, [myName, peerName]);
 
   const dispatch = useCallback(
     (action: MpAction) => {
+      const current = stateRef.current;
+      if (!current) return;
       if (role === "host") {
-        const current = stateRef.current;
-        if (!current) return;
         const next = reduceMp(current, action);
-        setState(next);
-        sessionRef.current?.send({ kind: "state", state: next });
+        if (next === current) return;
+        commit(next, action.type === "raise" && next.phase === "bidding");
       } else {
+        // Client-side prediction for the latency-sensitive action only: the
+        // raise lands instantly locally and the host's frame reconciles after.
+        if (action.type === "raise") {
+          const predicted = reduceMp(current, action);
+          if (predicted !== current) {
+            stateRef.current = predicted;
+            setState(predicted);
+          }
+        }
         sessionRef.current?.send({ kind: "action", action });
       }
     },
-    [role],
+    [role, commit],
   );
 
   const leave = () => {

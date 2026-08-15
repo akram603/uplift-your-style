@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { sfx } from "@/lib/sfx";
@@ -7,7 +7,9 @@ import type { PeerId } from "@/lib/mp-game";
 import { FastForward, RotateCcw, Trophy } from "lucide-react";
 
 /** Live text commentary of a simulated head-to-head, plus the leaderboard. */
-export function MatchSimScreen({
+export const MatchSimScreen = memo(MatchSimScreenBase);
+
+function MatchSimScreenBase({
   sim,
   names,
   points,
@@ -21,31 +23,40 @@ export function MatchSimScreen({
   onNextRound: () => void;
 }) {
   const [clock, setClock] = useState(0);
-  const timer = useRef<number | null>(null);
 
+  // rAF clock: advances on the display refresh instead of a fixed interval, so
+  // playback stays smooth (and correctly paced) on slow or throttled devices.
   useEffect(() => {
-    timer.current = window.setInterval(() => {
-      setClock((m) => {
-        if (m >= 90) {
-          if (timer.current) window.clearInterval(timer.current);
-          return 90;
-        }
-        return m + 1;
-      });
-    }, 90);
-    return () => {
-      if (timer.current) window.clearInterval(timer.current);
+    setClock(0);
+    let raf = 0;
+    let start = 0;
+    let last = -1;
+    const MS_PER_MINUTE = 90;
+    const loop = (now: number) => {
+      if (!start) start = now;
+      const minute = Math.min(90, Math.floor((now - start) / MS_PER_MINUTE));
+      if (minute !== last) {
+        last = minute;
+        setClock(minute);
+      }
+      if (minute < 90) raf = requestAnimationFrame(loop);
     };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
   }, [sim]);
 
   const shown = useMemo(
     () => sim.events.filter((e) => e.minute <= clock || (clock >= 90 && e.kind === "fulltime")),
     [sim, clock],
   );
-  const goalsSoFar = shown.filter((e) => e.kind === "goal");
-  const hostGoals = goalsSoFar.filter((e) => e.side === "host").length;
-  const guestGoals = goalsSoFar.filter((e) => e.side === "guest").length;
+  const goalsSoFar = useMemo(() => shown.filter((e) => e.kind === "goal"), [shown]);
+  const hostGoals = useMemo(
+    () => goalsSoFar.filter((e) => e.side === "host").length,
+    [goalsSoFar],
+  );
+  const guestGoals = goalsSoFar.length - hostGoals;
   const done = clock >= 90;
+  const feed = useMemo(() => [...shown].reverse(), [shown]);
 
   const prevGoals = useRef(0);
   useEffect(() => {
@@ -84,8 +95,8 @@ export function MatchSimScreen({
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Live commentary
         </h3>
-        <ul className="max-h-72 space-y-2 overflow-y-auto pr-1">
-          {[...shown].reverse().map((e, i) => (
+        <ul className="max-h-72 space-y-2 overflow-y-auto pr-1 [contain:content] overscroll-contain [-webkit-overflow-scrolling:touch]">
+          {feed.map((e, i) => (
             <li key={`${e.minute}-${i}`} className="flex gap-2 text-sm leading-relaxed">
               <span className="w-9 shrink-0 font-mono text-xs text-muted-foreground">
                 {e.minute}&apos;

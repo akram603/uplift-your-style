@@ -26,6 +26,8 @@ export interface MpResult {
 
 export interface MpState {
   phase: 'bidding' | 'resolved' | 'over' | 'match'
+  /** Monotonic revision — used to drop stale/out-of-order network frames. */
+  rev: number
   teamSize: TeamSize
   formationId?: string | undefined
   totalRounds: number
@@ -99,7 +101,11 @@ function draw(
   return { revealed, hidden, rest: pool.filter((p) => !taken.has(p.id)) }
 }
 
-export function createMpGame(config: MpConfig, points?: Record<PeerId, number>): MpState {
+export function createMpGame(
+  config: MpConfig,
+  points?: Record<PeerId, number>,
+  rev = 0,
+): MpState {
   const pool = filterPool(config.filter)
   const seed = {
     teams: {
@@ -112,6 +118,7 @@ export function createMpGame(config: MpConfig, points?: Record<PeerId, number>):
   const { revealed, hidden, rest } = draw(pool, seed)
   const state: MpState = {
     phase: 'bidding',
+    rev,
     teamSize: config.teamSize,
     formationId: config.formationId,
     totalRounds: config.teamSize,
@@ -155,6 +162,7 @@ export function hiddenCost(state: MpState, recipient: PeerId): number {
 function clone(state: MpState): MpState {
   return {
     ...state,
+    rev: state.rev + 1,
     teams: {
       host: { ...state.teams.host, squad: [...state.teams.host.squad] },
       guest: { ...state.teams.guest, squad: [...state.teams.guest.squad] },
@@ -313,7 +321,7 @@ export function reduceMp(prev: MpState, action: MpAction): MpState {
 
   if (action.type === 'newDraft') {
     if (prev.phase !== 'match' && prev.phase !== 'over') return prev
-    return createMpGame(prev.config, prev.points)
+    return createMpGame(prev.config, prev.points, prev.rev + 1)
   }
 
   return prev
